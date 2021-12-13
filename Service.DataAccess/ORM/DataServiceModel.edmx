@@ -1,0 +1,324 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="DataServiceModel.Store" Provider="System.Data.SqlServerCe.4.0" ProviderManifestToken="4.0" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="CommentFile">
+          <Key>
+            <PropertyRef Name="FileName" />
+          </Key>
+          <Property Name="FileName" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="FullPath" Type="nvarchar" MaxLength="300" />
+          <Property Name="DateCreate" Type="datetime" />
+          <Property Name="DateModified" Type="datetime" />
+          <Property Name="Length" Type="bigint" />
+          <Property Name="Status" Type="int" />
+          <Property Name="NoTicket" Type="nvarchar" MaxLength="25" />
+          <Property Name="CaseNumber" Type="nvarchar" MaxLength="100" />
+          <Property Name="Attempts" Type="int" Nullable="false" />
+          <Property Name="Response" Type="int" />
+          <Property Name="TransactionId" Type="nvarchar" MaxLength="100" />
+          <Property Name="TransactionDate" Type="datetime" />
+          <Property Name="DateResponse" Type="datetime" />
+          <Property Name="FileResponseCreated" Type="tinyint" />
+          <Property Name="FullPathResponse" Type="nvarchar" MaxLength="200" />
+        </EntityType>
+        <EntityType Name="StatusFile">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="100" />
+          <Property Name="Description" Type="nvarchar" MaxLength="500" />
+        </EntityType>
+        <EntityType Name="TicketAttempt">
+          <Key>
+            <PropertyRef Name="Id" />
+            <PropertyRef Name="NoTicket" />
+            <PropertyRef Name="NAttempt" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="NoTicket" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="NAttempt" Type="int" Nullable="false" />
+          <Property Name="Response" Type="int" Nullable="false" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="Message" Type="nvarchar" MaxLength="500" />
+          <Property Name="TransactionId" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="TransactionDate" Type="datetime" Nullable="false" />
+          <Property Name="DateResponse" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="TicketFile">
+          <Key>
+            <PropertyRef Name="FileName" />
+          </Key>
+          <Property Name="FileName" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="FullPath" Type="nvarchar" MaxLength="300" />
+          <Property Name="DateCreate" Type="datetime" />
+          <Property Name="DateModified" Type="datetime" />
+          <Property Name="Length" Type="bigint" />
+          <Property Name="Status" Type="int" />
+          <Property Name="NoTicket" Type="nvarchar" MaxLength="25" />
+          <Property Name="Attempts" Type="int" Nullable="false" />
+          <Property Name="Response" Type="int" />
+          <Property Name="CaseNumber" Type="nvarchar" MaxLength="100" />
+          <Property Name="TransactionId" Type="nvarchar" MaxLength="100" />
+          <Property Name="TransactionDate" Type="datetime" />
+          <Property Name="DateResponse" Type="datetime" />
+          <Property Name="FileResponseCreated" Type="tinyint" />
+          <Property Name="FullPathResponse" Type="nvarchar" MaxLength="200" />
+          <Property Name="DateNextAttempt" Type="datetime" />
+          <Property Name="FileMove" Type="tinyint" />
+        </EntityType>
+        <Association Name="FK_COMMENTF_REFERENCE_STATUSFI">
+          <End Role="StatusFile" Type="Self.StatusFile" Multiplicity="0..1" />
+          <End Role="CommentFile" Type="Self.CommentFile" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="StatusFile">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="CommentFile">
+              <PropertyRef Name="Status" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_TICKETFI_REFERENCE_STATUSFI">
+          <End Role="StatusFile" Type="Self.StatusFile" Multiplicity="0..1" />
+          <End Role="TicketFile" Type="Self.TicketFile" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="StatusFile">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="TicketFile">
+              <PropertyRef Name="Status" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="DataServiceModelStoreContainer">
+          <EntitySet Name="CommentFile" EntityType="Self.CommentFile" store:Type="Tables" />
+          <EntitySet Name="StatusFile" EntityType="Self.StatusFile" store:Type="Tables" />
+          <EntitySet Name="TicketAttempt" EntityType="Self.TicketAttempt" store:Type="Tables" />
+          <EntitySet Name="TicketFile" EntityType="Self.TicketFile" store:Type="Tables" />
+          <AssociationSet Name="FK_COMMENTF_REFERENCE_STATUSFI" Association="Self.FK_COMMENTF_REFERENCE_STATUSFI">
+            <End Role="StatusFile" EntitySet="StatusFile" />
+            <End Role="CommentFile" EntitySet="CommentFile" />
+          </AssociationSet>
+          <AssociationSet Name="FK_TICKETFI_REFERENCE_STATUSFI" Association="Self.FK_TICKETFI_REFERENCE_STATUSFI">
+            <End Role="StatusFile" EntitySet="StatusFile" />
+            <End Role="TicketFile" EntitySet="TicketFile" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="DataServiceModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="CommentFile">
+          <Key>
+            <PropertyRef Name="FileName" />
+          </Key>
+          <Property Name="FileName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="FullPath" Type="String" MaxLength="300" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreate" Type="DateTime" Precision="3" />
+          <Property Name="DateModified" Type="DateTime" Precision="3" />
+          <Property Name="Length" Type="Int64" />
+          <Property Name="Status" Type="Int32" />
+          <Property Name="NoTicket" Type="String" MaxLength="25" FixedLength="false" Unicode="true" />
+          <Property Name="CaseNumber" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="Attempts" Type="Int32" Nullable="false" />
+          <Property Name="Response" Type="Int32" />
+          <Property Name="TransactionId" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="TransactionDate" Type="DateTime" Precision="3" />
+          <Property Name="DateResponse" Type="DateTime" Precision="3" />
+          <Property Name="FileResponseCreated" Type="Byte" />
+          <Property Name="FullPathResponse" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="StatusFile" Relationship="Self.FK_COMMENTF_REFERENCE_STATUSFI" FromRole="CommentFile" ToRole="StatusFile" />
+        </EntityType>
+        <EntityType Name="StatusFile">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="CommentFile" Relationship="Self.FK_COMMENTF_REFERENCE_STATUSFI" FromRole="StatusFile" ToRole="CommentFile" />
+          <NavigationProperty Name="TicketFile" Relationship="Self.FK_TICKETFI_REFERENCE_STATUSFI" FromRole="StatusFile" ToRole="TicketFile" />
+        </EntityType>
+        <EntityType Name="TicketFile">
+          <Key>
+            <PropertyRef Name="FileName" />
+          </Key>
+          <Property Name="FileName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="FullPath" Type="String" MaxLength="300" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreate" Type="DateTime" Precision="3" />
+          <Property Name="DateModified" Type="DateTime" Precision="3" />
+          <Property Name="Length" Type="Int64" />
+          <Property Name="Status" Type="Int32" />
+          <Property Name="NoTicket" Type="String" MaxLength="25" FixedLength="false" Unicode="true" />
+          <Property Name="Attempts" Type="Int32" Nullable="false" />
+          <Property Name="Response" Type="Int32" />
+          <Property Name="CaseNumber" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="TransactionId" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="TransactionDate" Type="DateTime" Precision="3" />
+          <Property Name="DateResponse" Type="DateTime" Precision="3" />
+          <Property Name="FileResponseCreated" Type="Byte" />
+          <Property Name="FullPathResponse" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="StatusFile" Relationship="Self.FK_TICKETFI_REFERENCE_STATUSFI" FromRole="TicketFile" ToRole="StatusFile" />
+          <Property Name="DateNextAttempt" Type="DateTime" Precision="3" />
+          <Property Name="FileMove" Type="Byte" />
+        </EntityType>
+        <Association Name="FK_COMMENTF_REFERENCE_STATUSFI">
+          <End Role="StatusFile" Type="Self.StatusFile" Multiplicity="0..1" />
+          <End Role="CommentFile" Type="Self.CommentFile" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="StatusFile">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="CommentFile">
+              <PropertyRef Name="Status" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_TICKETFI_REFERENCE_STATUSFI">
+          <End Role="StatusFile" Type="Self.StatusFile" Multiplicity="0..1" />
+          <End Role="TicketFile" Type="Self.TicketFile" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="StatusFile">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="TicketFile">
+              <PropertyRef Name="Status" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="DataServiceEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="CommentFile" EntityType="Self.CommentFile" />
+          <EntitySet Name="StatusFile" EntityType="Self.StatusFile" />
+          <EntitySet Name="TicketFile" EntityType="Self.TicketFile" />
+          <AssociationSet Name="FK_COMMENTF_REFERENCE_STATUSFI" Association="Self.FK_COMMENTF_REFERENCE_STATUSFI">
+            <End Role="StatusFile" EntitySet="StatusFile" />
+            <End Role="CommentFile" EntitySet="CommentFile" />
+          </AssociationSet>
+          <AssociationSet Name="FK_TICKETFI_REFERENCE_STATUSFI" Association="Self.FK_TICKETFI_REFERENCE_STATUSFI">
+            <End Role="StatusFile" EntitySet="StatusFile" />
+            <End Role="TicketFile" EntitySet="TicketFile" />
+          </AssociationSet>
+          <EntitySet Name="TicketAttempt" EntityType="DataServiceModel.TicketAttempt" />
+        </EntityContainer>
+        <EntityType Name="TicketAttempt">
+          <Key>
+            <PropertyRef Name="NoTicket" />
+            <PropertyRef Name="NAttempt" />
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="NoTicket" Type="String" Nullable="false" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="NAttempt" Type="Int32" Nullable="false" />
+          <Property Name="Response" Type="Int32" Nullable="false" />
+          <Property Name="Message" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="TransactionId" Type="String" Nullable="false" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="TransactionDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="DateResponse" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="DataServiceModelStoreContainer" CdmEntityContainer="DataServiceEntities">
+          <EntitySetMapping Name="CommentFile">
+            <EntityTypeMapping TypeName="DataServiceModel.CommentFile">
+              <MappingFragment StoreEntitySet="CommentFile">
+                <ScalarProperty Name="FileName" ColumnName="FileName" />
+                <ScalarProperty Name="FullPath" ColumnName="FullPath" />
+                <ScalarProperty Name="DateCreate" ColumnName="DateCreate" />
+                <ScalarProperty Name="DateModified" ColumnName="DateModified" />
+                <ScalarProperty Name="Length" ColumnName="Length" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="NoTicket" ColumnName="NoTicket" />
+                <ScalarProperty Name="CaseNumber" ColumnName="CaseNumber" />
+                <ScalarProperty Name="Attempts" ColumnName="Attempts" />
+                <ScalarProperty Name="Response" ColumnName="Response" />
+                <ScalarProperty Name="TransactionId" ColumnName="TransactionId" />
+                <ScalarProperty Name="TransactionDate" ColumnName="TransactionDate" />
+                <ScalarProperty Name="DateResponse" ColumnName="DateResponse" />
+                <ScalarProperty Name="FileResponseCreated" ColumnName="FileResponseCreated" />
+                <ScalarProperty Name="FullPathResponse" ColumnName="FullPathResponse" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="StatusFile">
+            <EntityTypeMapping TypeName="DataServiceModel.StatusFile">
+              <MappingFragment StoreEntitySet="StatusFile">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="TicketFile">
+            <EntityTypeMapping TypeName="DataServiceModel.TicketFile">
+              <MappingFragment StoreEntitySet="TicketFile">
+                <ScalarProperty Name="FileMove" ColumnName="FileMove" />
+                <ScalarProperty Name="DateNextAttempt" ColumnName="DateNextAttempt" />
+                <ScalarProperty Name="FileName" ColumnName="FileName" />
+                <ScalarProperty Name="FullPath" ColumnName="FullPath" />
+                <ScalarProperty Name="DateCreate" ColumnName="DateCreate" />
+                <ScalarProperty Name="DateModified" ColumnName="DateModified" />
+                <ScalarProperty Name="Length" ColumnName="Length" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="NoTicket" ColumnName="NoTicket" />
+                <ScalarProperty Name="Attempts" ColumnName="Attempts" />
+                <ScalarProperty Name="Response" ColumnName="Response" />
+                <ScalarProperty Name="CaseNumber" ColumnName="CaseNumber" />
+                <ScalarProperty Name="TransactionId" ColumnName="TransactionId" />
+                <ScalarProperty Name="TransactionDate" ColumnName="TransactionDate" />
+                <ScalarProperty Name="DateResponse" ColumnName="DateResponse" />
+                <ScalarProperty Name="FileResponseCreated" ColumnName="FileResponseCreated" />
+                <ScalarProperty Name="FullPathResponse" ColumnName="FullPathResponse" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="TicketAttempt">
+            <EntityTypeMapping TypeName="DataServiceModel.TicketAttempt">
+              <MappingFragment StoreEntitySet="TicketAttempt">
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="DateResponse" ColumnName="DateResponse" />
+                <ScalarProperty Name="TransactionDate" ColumnName="TransactionDate" />
+                <ScalarProperty Name="TransactionId" ColumnName="TransactionId" />
+                <ScalarProperty Name="Message" ColumnName="Message" />
+                <ScalarProperty Name="Response" ColumnName="Response" />
+                <ScalarProperty Name="NAttempt" ColumnName="NAttempt" />
+                <ScalarProperty Name="NoTicket" ColumnName="NoTicket" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="false" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
