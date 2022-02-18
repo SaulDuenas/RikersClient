@@ -4,6 +4,7 @@ using Service.Domian.Implementation;
 using Service.Domian.Model;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity.Validation;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -36,10 +37,29 @@ namespace Service.Domian.Core
                 var type = created != 0 ? EventLogEntryType.Information : EventLogEntryType.Error;
                 var message = created != 0 ? "Registro de intento satisfactorio" : "Conflicto al registrar el intento";
 
-                _logger.WriteLog("AttemptTicketCore", type, message, 100);
+                _logger.WriteLog("AttemptTicketRepositoryCore", type, message, 100);
 
                 return created != 0 ? Status.Create : Status.Conflict;
-                
+
+            }
+            catch (DbEntityValidationException ex)
+            {
+                foreach (var eve in ex.EntityValidationErrors)
+                {
+                    string message = $"Entity of type \"{eve.Entry.Entity.GetType().Name}\" in state \"{eve.Entry.State}\" has the following validation errors:";
+                    _logger.WriteLog("RegisterTicketAttempt", EventLogEntryType.Error, message,100);
+
+                    foreach (var ve in eve.ValidationErrors)
+                    {
+                        Console.WriteLine("- Property: \"{0}\", Error: \"{1}\"",
+                            ve.PropertyName, ve.ErrorMessage);
+
+                        string message2 = $"Entity of type \"{eve.Entry.Entity.GetType().Name}\" in state \"{eve.Entry.State}\" has the following validation errors:";
+                        _logger.WriteLog("RegisterTicketAttempt", EventLogEntryType.Error, message2, 100);
+
+                    }
+                }
+                return Status.InternalError;
             }
             catch (Exception ex)
             {

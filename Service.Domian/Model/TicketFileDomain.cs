@@ -8,7 +8,6 @@ namespace Service.Domian.Model
 {
    public class TicketFileDomain
     {
-
         public string FileName { get; set; }
         public string FullPath { get; set; }
         public Nullable<System.DateTime> DateCreate { get; set; }
@@ -26,6 +25,8 @@ namespace Service.Domian.Model
         public string FullPathResponse { get; set; }
         public Nullable<System.DateTime> DateNextAttempt { get; set; }
         public Nullable<byte> FileMove { get; set; }
+        public string Message { get; set; }
+        public Nullable<byte> Processed { get; set; }
 
     }
 }

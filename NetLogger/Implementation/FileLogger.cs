@@ -2,6 +2,7 @@
 using NetLogger.Base;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,12 @@ namespace NetLogger.Implementation
     {
         public string FileName { get; set; }
         public string strPath { get; set; }
+
+        public FileLogger() {
+
+            strPath = ConfigurationManager.AppSettings["LogPath"];
+            FileName = ConfigurationManager.AppSettings["LogFileName"];
+        }
 
         public bool writeintoFile (string message)
         {

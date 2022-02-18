@@ -31,7 +31,8 @@ namespace Service.DataAccess.ORM
         public string FullPathResponse { get; set; }
         public Nullable<System.DateTime> DateNextAttempt { get; set; }
         public Nullable<byte> FileMove { get; set; }
-    
+        public string Message { get; set; }
+        public Nullable<byte> Processed { get; set; }
         public virtual StatusFile StatusFile { get; set; }
     }
 }

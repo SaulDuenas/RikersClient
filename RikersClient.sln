@@ -21,7 +21,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service.DataAccess", "Servi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetLogger", "NetLogger\NetLogger.csproj", "{0A5D5108-DFE4-4B7A-BB78-D09F44B52F15}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceApp", "ServiceApp\ServiceApp.csproj", "{3B4125A3-DA0B-4EF9-AE81-8ED38122CCAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RikerServiceApp", "ServiceApp\RikerServiceApp.csproj", "{3B4125A3-DA0B-4EF9-AE81-8ED38122CCAB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceAppR2", "ServiceAppR2\ServiceAppR2.csproj", "{1558D979-55A1-41B9-881B-718B3576A5C2}"
 EndProject

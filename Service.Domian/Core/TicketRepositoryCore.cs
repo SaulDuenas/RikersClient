@@ -16,6 +16,9 @@ namespace Service.Domian.Core
 
         private Logger _logger = null;
 
+
+        private byte TICKET_NOT_PROCESSED = 0;
+
         private byte FILE_RESPONSE_NO_CREATE = 0;
         private byte FILES_NOT_MOVE = 0;
 
@@ -197,15 +200,13 @@ namespace Service.Domian.Core
         {
             try
             {
-               
-                var statusfileLts = new List<int>() { (int)StatusFile.Dispached, (int)StatusFile.Quarantine };
+                var statusfileLts = new List<int>() { (int)StatusFile.Dispached, (int)StatusFile.Quarantine, (int)StatusFile.TryAgain };
 
                 TicketFileRepository ticketfile = new TicketFileRepository();
 
-                var destination = ticketfile.ReadAll(statusfileLts).Where(p => p.FileResponseCreated == FILE_RESPONSE_NO_CREATE).ToList();
+                var destination = ticketfile.ReadAll(statusfileLts).Where(p => p.Processed == TICKET_NOT_PROCESSED  &&  p.FileResponseCreated == FILE_RESPONSE_NO_CREATE).ToList();
 
                 ticketfile.Dispose();
-
 
                 //var type = data != null ? EventLogEntryType.SuccessAudit : EventLogEntryType.Warning;
                 //var message = data != null ? "FileTicket identificado " : "No se identifico el fileticket";

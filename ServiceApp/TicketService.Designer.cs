@@ -57,6 +57,7 @@ namespace ServiceApp
             // 
             // TicketService
             // 
+            this.CanShutdown = true;
             this.ServiceName = "TicketService";
             ((System.ComponentModel.ISupportInitialize)(this.observer)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.eventLog1)).EndInit();

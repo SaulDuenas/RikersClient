@@ -18,6 +18,6 @@ namespace RikersProxy
         Token Token { get; set; }
 
         ProxyResult CreateCase(CaseData data);
-        ProxyResult ObtainToken();
+        ProxyResult TokenRequest();
     }
 }

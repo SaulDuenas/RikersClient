@@ -19,7 +19,6 @@ using System.Threading.Tasks;
 using static Service.Domian.Core.TicketRepositoryCore;
 
 
-
 namespace ServiceApp
 {
     [RunInstaller(true)]
@@ -54,11 +53,6 @@ namespace ServiceApp
 
         }
 
-        public void OnDebug() 
-        {
-            OnStart(null);
-        }
-
         protected override void OnStart(string[] args)
         {
             eventLog1.WriteEntry("In OnStart.");
@@ -74,7 +68,9 @@ namespace ServiceApp
                 if (this.backgroundWorker1.IsBusy != true)
                 {
                     BkgProccessIsOn = true;
-                    backgroundWorker1.RunWorkerAsync();
+                    backgroundWorker1.RunWorkerAsync("TicketService");
+                    this._logger.SuccessAudit("Service", $"BkgProccessIsOn flag is ON", 100);
+
                 }
             }
 
@@ -83,21 +79,48 @@ namespace ServiceApp
 
         protected override void OnStop()
         {
-
-            eventLog1.WriteEntry("In OnStop.");
-            backgroundWorker1.CancelAsync();
-
-            // TODO: Add code here to perform any tear-down necessary to stop your service.
-
-            if (StopMonitoring())
+            try
             {
-                this._proxyCli = null;
-                this._filelog = null;
-                this._logger = null;
+                eventLog1.WriteEntry("In OnStop.");
+                this._logger.Info("Service", $"stop monitoring - sprint {start_counter}", 100);
+
+
+                // TODO: Add code here to perform any tear-down necessary to stop your service.
+                this._logger.SuccessAudit("Service", $"StopBkgProcess -> {StopBkgProcess}", 100);
+                BkgProccessIsOn = false;
+                this._logger.SuccessAudit("Service", $"BkgProccessIsOn flag is OFF", 100);
+                backgroundWorker1.CancelAsync();
+
+                while (!StopBkgProcess);
+
+                this._logger.SuccessAudit("Service", $"StopBkgProcess -> {StopBkgProcess}", 100);
+
+                // this._ticketsrvcore.stop();
+                if (observer.EnableRaisingEvents)
+                {
+                    // this._repositoryCore = null;
+                    // this._proxyCore = null;
+
+                    observer.EnableRaisingEvents = false;
+
+                    this._proxyCli = null;
+                    this._filelog = null;
+                    this._logger = null;
+
+                }
+
+               
+                eventLog1.WriteEntry("backgroundWorker1 canceled");
+
+                eventLog1.WriteEntry("End OnStop.");
+
+                this._logger.Info("Service", $"Service Stoped", 100);
 
             }
-
-            eventLog1.WriteEntry("End OnStop.");
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         protected override void OnShutdown()
@@ -109,53 +132,21 @@ namespace ServiceApp
 
         private bool startMonitoring()
         {
-
-            bool retval = false;
-
-            if (!String.IsNullOrEmpty(ConfigurationManager.AppSettings["Logger"]) )
-            {
-                _filelog.strEventLogSelect = ConfigurationManager.AppSettings["Logger"];
-                this._logger.LogAppender.Add(_filelog);
-            }
+            
+            this._logger.LogAppender.Add(_filelog);
             start_counter++;
 
-            if (!(String.IsNullOrEmpty(ConfigurationManager.AppSettings["BaseUrl"]) && String.IsNullOrEmpty(ConfigurationManager.AppSettings["credential"])))
+            this._proxyCore = new ProxyCore(this._proxyCli, this._logger);
+
+            string path_observer = ConfigurationManager.AppSettings["PathTicketsPending"];
+            string filter = ConfigurationManager.AppSettings["Filter"];
+            if (Directory.Exists(path_observer))
             {
-                retval = true;
-
-                this._proxyCli.BaseUrl = ConfigurationManager.AppSettings["BaseUrl"];
-                this._proxyCli.Credentials = ConfigurationManager.AppSettings["credential"];
-                this._proxyCli.EndPointCreateCase = ConfigurationManager.AppSettings["CreateCase"];
-                this._proxyCli.EndPointGetToken = ConfigurationManager.AppSettings["EndPointAccessToken"];
-               // this._proxyCli.SerialCert = ConfigurationManager.AppSettings["SerialCert"];
-
-                this._proxyCore = new ProxyCore(this._proxyCli, this._logger);
-
-            }
-            else
-            {
-
-                this._logger.Error("Service", $" BaseUrl and/or credential initialize parameters not found", 100);
-
-                return false;
-            }
-
-
-            if (retval && Directory.Exists(ConfigurationManager.AppSettings["TicketsPending"]))
-            {
-                observer.Path = ConfigurationManager.AppSettings["TicketsPending"];
-                observer.Filter = ConfigurationManager.AppSettings["Filter"];
+                observer.Path = path_observer;
+                observer.Filter = filter;
                 observer.EnableRaisingEvents = true;
 
                 this._ticketsrvcore = new TicketServiceCore(this._logger, this._proxyCore);
-
-                this._ticketsrvcore.PendingPath = ConfigurationManager.AppSettings["TicketsPending"];
-                this._ticketsrvcore.DispatchedPath = ConfigurationManager.AppSettings["TicketsDispatched"];
-                this._ticketsrvcore.QuarantinePath = ConfigurationManager.AppSettings["TicketsQuarantine"];
-                this._ticketsrvcore.ResponsePath = ConfigurationManager.AppSettings["TicketsResponse"];
-
-                this._ticketsrvcore.TotalAttemps = int.Parse(ConfigurationManager.AppSettings["TotalAttemps"]);
-                this._ticketsrvcore.SecondsWait = int.Parse(ConfigurationManager.AppSettings["SecondsWait"]);
 
                 this._ticketsrvcore.update_file_cache(); // check files when service is offline
 
@@ -168,7 +159,8 @@ namespace ServiceApp
             }
             else
             {
-                this._logger.Error("Service", $"Directory name  {ConfigurationManager.AppSettings["TicketsPending"]} is not valid.", 100);
+                if (string.IsNullOrEmpty(path_observer)) this._logger.Error("Service", $"Parameter PathTicketsPending is Empty or not exist, check the parameter PathTicketsPending on App.Config.", 100);
+                if (!Directory.Exists(path_observer)) this._logger.Error("Service", $"Path {path_observer} not exist", 100);
 
                 return false;
             }
@@ -178,22 +170,19 @@ namespace ServiceApp
 
         private bool StopMonitoring()
         {
+            this._logger.SuccessAudit("Service", $"in StopMonitoring method", 100);
+
             BkgProccessIsOn = false;
 
             while (!StopBkgProcess);
 
             // this._ticketsrvcore.stop();
-
-
             if (observer.EnableRaisingEvents)
             {
-
                 // this._repositoryCore = null;
                 // this._proxyCore = null;
 
                 observer.EnableRaisingEvents = false;
-
-                this._logger.Info("Service", $"stop monitoring - sprint {start_counter}", 100);
 
                 return true;
             }
@@ -221,26 +210,29 @@ namespace ServiceApp
 
                 this._ticketsrvcore.move_files_process();
 
-
                 // report progress
                 backgroundWorker1.ReportProgress(10);
 
             }
             StopBkgProcess = true;
-
+            this._logger.SuccessAudit("Service", $"backgroundWorker1.CancellationPending -> {backgroundWorker1.CancellationPending}", 100);
+            /*
             if (backgroundWorker1.CancellationPending == true)
             {
                 e.Cancel = true;
             }
+            */
         }
 
         private void backgroundWorker1_OnProgressChanged(object sender, ProgressChangedEventArgs e)
         {
+          //  this._logger.SuccessAudit("Service", $"OnProgressChanged", 100);
 
         }
 
         private void backgroundWorker1_OnCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            this._logger.SuccessAudit("Service", $"OnCompleted", 100);
 
         }
 

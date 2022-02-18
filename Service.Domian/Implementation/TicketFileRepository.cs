@@ -100,8 +100,11 @@ namespace Service.Domian.Implementation
                 ticketfile.FileResponseCreated = entity.FileResponseCreated;
                 ticketfile.FullPathResponse = entity.FullPathResponse;
                 ticketfile.DateNextAttempt = entity.DateNextAttempt;
+                ticketfile.Message = entity.Message;
+                ticketfile.Processed = entity.Processed;
+
             }
-            
+
 
             //  var ticketfile = new TicketFile() { FileName = entity.FileName};
             //  _context.TicketFile.Attach(destination);

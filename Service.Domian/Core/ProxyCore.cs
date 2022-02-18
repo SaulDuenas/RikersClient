@@ -26,16 +26,19 @@ namespace Service.Domian.Core
             _logger = logger;
         }
 
-
-        public bool TokenisOk()
+        public bool TokenExpired() 
         {
+            return !(_client.Elapsed_Time_Token.Equals(null)) && _client.Elapsed_Time_Token.TotalSeconds <= 0;
+        }
 
-            bool tokenOk = true;
+        public bool TokenisAvailable()
+        {
+            bool retval = true;
 
-            if (!(_client.Elapsed_Time_Token.Equals(null)) && _client.Elapsed_Time_Token.TotalSeconds <= 0)
+            if (TokenExpired())
             {
                 _logger.Info("CREATE TOKEN", "token expired, requesting for token", 100);
-                var result = _client.ObtainToken();
+                var result = _client.TokenRequest();
 
                 result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
 
@@ -45,18 +48,18 @@ namespace Service.Domian.Core
 
                     _logger.WriteLog("CREATE TOKEN", "SuccessAudit", $"Request Code: {(int)result.Code} - {result.Message} - AccessToken: {_client.Token.AccessToken} - ExpiresIn: {_client.Token.ExpiresIn}", 100);
 
-                    tokenOk = true;
+                    retval = true;
                 }
                 else
                 {
                   //  result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
-                    tokenOk = false;
+                    retval = false;
                   
                 }
 
             }
 
-            return tokenOk;
+            return retval;
 
         }
 

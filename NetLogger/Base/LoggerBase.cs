@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -16,8 +17,12 @@ namespace NetLogger.Base
                                           set { var strEventLogSelect = value;
                                                 this.SetEventList(strEventLogSelect);
                                               } 
-                                        } 
-          
+                                        }
+
+        public LoggerBase()
+        {
+            strEventLogSelect = string.IsNullOrEmpty(ConfigurationManager.AppSettings["Logger"]) ? "Information,Warning,Error,SuccessAudit,FailureAudit" : ConfigurationManager.AppSettings["Logger"];
+        }
 
         public List<uData> EventLogSelect {  get; set;  }
 

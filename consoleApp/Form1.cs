@@ -84,7 +84,6 @@ namespace consoleApp
                 btnStop.Enabled = true;
                // button1.Enabled = true;
             }
-
         }
 
         private void btnStop_Click(object sender, EventArgs e)
@@ -105,29 +104,26 @@ namespace consoleApp
 
         private bool startMonitoring() 
         {
+            _locallog.ListBoxRef = listBox1;
 
-            bool retval = false;
+            this._logger.LogAppender.Add(_locallog);
+            this._logger.LogAppender.Add(_filelog);
 
-            if (!String.IsNullOrEmpty(ConfigurationManager.AppSettings["Logger"]))
-            {
-                _locallog.strEventLogSelect = ConfigurationManager.AppSettings["Logger"];
-                _filelog.strEventLogSelect = ConfigurationManager.AppSettings["Logger"];
-                _locallog.ListBoxRef = listBox1;
-
-                this._logger.LogAppender.Add(_locallog);
-                this._logger.LogAppender.Add(_filelog);
-
-            }
             start_counter++;
+
+            this._proxyCore = new ProxyCore(this._proxyCli, this._logger);
+
+            /*
+
 
             if (!(String.IsNullOrEmpty(ConfigurationManager.AppSettings["BaseUrl"]) && String.IsNullOrEmpty(ConfigurationManager.AppSettings["credential"])))
             {
                 retval = true;
 
-                this._proxyCli.BaseUrl = ConfigurationManager.AppSettings["BaseUrl"];
-                this._proxyCli.Credentials = ConfigurationManager.AppSettings["credential"];
-                this._proxyCli.EndPointCreateCase = ConfigurationManager.AppSettings["CreateCase"];
-                this._proxyCli.EndPointGetToken = ConfigurationManager.AppSettings["EndPointAccessToken"];
+               // this._proxyCli.BaseUrl = ConfigurationManager.AppSettings["BaseUrl"];
+               // this._proxyCli.Credentials = ConfigurationManager.AppSettings["credential"];
+               // this._proxyCli.EndPointCreateCase = ConfigurationManager.AppSettings["CreateCase"];
+              //  this._proxyCli.EndPointGetToken = ConfigurationManager.AppSettings["EndPointAccessToken"];
 
                 this._proxyCore = new ProxyCore(this._proxyCli, this._logger);
 
@@ -140,23 +136,17 @@ namespace consoleApp
                 return false;
             }
 
+            */
 
-            if (retval && Directory.Exists(ConfigurationManager.AppSettings["TicketsPending"]))
+            string path_observer = ConfigurationManager.AppSettings["PathTicketsPending"];
+
+            if (!string.IsNullOrEmpty(path_observer) && Directory.Exists(path_observer))
             {
-                observer.Path = ConfigurationManager.AppSettings["TicketsPending"];
+                observer.Path = path_observer;
                 observer.Filter = ConfigurationManager.AppSettings["Filter"];
                 observer.EnableRaisingEvents = true;
 
-
                 this._ticketsrvcore = new TicketServiceCore(this._logger, this._proxyCore);
-
-                this._ticketsrvcore.PendingPath = ConfigurationManager.AppSettings["TicketsPending"];
-                this._ticketsrvcore.DispatchedPath = ConfigurationManager.AppSettings["TicketsDispatched"];
-                this._ticketsrvcore.QuarantinePath = ConfigurationManager.AppSettings["TicketsQuarantine"];
-                this._ticketsrvcore.ResponsePath = ConfigurationManager.AppSettings["TicketsResponse"];
-
-                this._ticketsrvcore.SecondsWait = int.Parse(ConfigurationManager.AppSettings["SecondsWait"]);
-                this._ticketsrvcore.TotalAttemps = int.Parse(ConfigurationManager.AppSettings["TotalAttemps"]);
 
                 this._ticketsrvcore.update_file_cache();
 
@@ -169,8 +159,9 @@ namespace consoleApp
             }
             else 
             {
-                this._logger.Error("Service", $"Directory name  {ConfigurationManager.AppSettings["TicketsPending"]} is not valid.", 100);
-              
+                if (string.IsNullOrEmpty(path_observer)) this._logger.Error("Service", $"Parameter PathTicketsPending is Empty or not exist, check the parameter PathTicketsPending on App.Config.", 100);
+                if (!Directory.Exists(path_observer)) this._logger.Error("Service", $"Path {path_observer} not exist", 100);
+
                 return false;
             }
 
@@ -241,7 +232,7 @@ namespace consoleApp
                 Length = file.Length,
                 Status = (int)status,
                 DateNextAttempt = DateTime.Now
-        };
+            };
 
 
             var result = _ticketsrvcore.TicketRepoCore.RegisterTicketFile(fileticket);
@@ -307,7 +298,7 @@ namespace consoleApp
             {
                 this._logger.Info("UITesting","token expired, requesting ner token",100);
 
-                var result = _proxyCli.ObtainToken();
+                var result = _proxyCli.TokenRequest();
                 
                 if (result.Code.Equals(HttpStatusCode.OK))
                 {

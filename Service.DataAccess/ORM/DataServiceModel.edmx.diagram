@@ -5,12 +5,12 @@
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
       <Diagram DiagramId="77b35583a1d34b198340e7ced423690f" Name="Diagram1">
-        <EntityTypeShape EntityType="DataServiceModel.CommentFile" Width="1.5" PointX="3.625" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataServiceModel.CommentFile" Width="1.75" PointX="3.625" PointY="0.75" IsExpanded="true" />
         <EntityTypeShape EntityType="DataServiceModel.StatusFile" Width="1.5" PointX="0.75" PointY="4.75" IsExpanded="true" />
         <EntityTypeShape EntityType="DataServiceModel.TicketFile" Width="1.75" PointX="3.25" PointY="6.5" IsExpanded="true" />
         <AssociationConnector Association="DataServiceModel.FK_COMMENTF_REFERENCE_STATUSFI" ManuallyRouted="false" />
         <AssociationConnector Association="DataServiceModel.FK_TICKETFI_REFERENCE_STATUSFI" ManuallyRouted="false" />
-        <EntityTypeShape EntityType="DataServiceModel.TicketAttempt" Width="1.5" PointX="5.75" PointY="6.625" />
+        <EntityTypeShape EntityType="DataServiceModel.TicketAttempt" Width="1.5" PointX="6.75" PointY="4.875" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>
