@@ -27,6 +27,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceAppR2", "ServiceAppR
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupRikersInterfaceService", "SetupRikersInterfaceService\SetupRikersInterfaceService.vdproj", "{01C697B9-8907-4BE9-A50D-E1E25DB82E23}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SQL", "SQL", "{C4D37053-5458-4AB4-9390-681962796F23}"
+	ProjectSection(SolutionItems) = preProject
+		Cache_DataBase.sql = Cache_DataBase.sql
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
