@@ -94,7 +94,7 @@ namespace Service.Domian.Core
                 // add files to cache
                 foreach (FileInfo file in file_diff)
                 {
-                    var status = utils.FileIsEmpty(file.FullName) ? StatusFile.Empty : utils.IsFileReady(file.FullName) ? StatusFile.Available : StatusFile.Busy;
+                    var status = utils.FileIsEmpty(file.FullName) ? FileStatus.Empty : utils.IsFileReady(file.FullName) ? FileStatus.Available : FileStatus.Busy;
                     TicketFileDomain fileticket = new TicketFileDomain()
                     {
                         FileName = file.Name,
@@ -110,12 +110,12 @@ namespace Service.Domian.Core
                     };
 
                     var result = this.TicketRepoCore.RegisterTicketFile(fileticket);
-                   if (result == Status.Create) this._logger.Info("RepositoryCore", $"file created, name: {file.Name} size: {file.Length} bytes.", 100);
+                   if (result == CacheStatus.Create) this._logger.Info("RepositoryCore", $"file created, name: {file.Name} size: {file.Length} bytes.", 100);
                 };
 
 
                 // change of files
-                var estatus_lts02 = new List<int>() { (int)StatusFile.Available, (int)StatusFile.Busy, (int)StatusFile.Empty };
+                var estatus_lts02 = new List<int>() { (int)FileStatus.Available, (int)FileStatus.Busy, (int)FileStatus.Empty };
                 var filecache2 = this.TicketRepoCore.GetTicketFiletoAttempt(estatus_lts02);
                 var filelistfrompath2 = utils.GetFileList(this.PendingPath, "txt").ToList();
 
@@ -132,14 +132,14 @@ namespace Service.Domian.Core
                     {
                         // utils.IsFileReady(e.FullPath);
 
-                        domainfile.Status = (int)(utils.IsFileReady(file.FullName) ? StatusFile.Available : StatusFile.Busy);
+                        domainfile.Status = (int)(utils.IsFileReady(file.FullName) ? FileStatus.Available : FileStatus.Busy);
                         domainfile.Length = file.Length;
                         domainfile.FullPath = file.FullName;
                         domainfile.DateModified = file.LastWriteTime;
                         domainfile.DateNextAttempt = DateTime.Now;
                         var result = this.TicketRepoCore.ModifyTicketFile(domainfile);
 
-                        if (result == Status.Create) this._logger.SuccessAudit("RepositoryCore", $"file changed : {file.FileName} size: {file.Length} bytes.", 100);
+                        if (result == CacheStatus.Create) this._logger.SuccessAudit("RepositoryCore", $"file changed : {file.FileName} size: {file.Length} bytes.", 100);
 
                     }
                 };
@@ -164,7 +164,7 @@ namespace Service.Domian.Core
             {
                 try
                 {
-                    var estatus_lts01 = new List<int>() { (int)StatusFile.Available, (int)StatusFile.TryAgain };
+                    var estatus_lts01 = new List<int>() { (int)FileStatus.Available, (int)FileStatus.TryAgain };
                     var filecache = TicketRepoCore.GetTicketFiletoAttempt(estatus_lts01);
 
                     foreach (TicketFileDomain ticketfile in filecache)
@@ -186,7 +186,7 @@ namespace Service.Domian.Core
 
                             if (result.Code.Equals(System.Net.HttpStatusCode.Created))
                             {
-                                StatusFile statusfile = StatusFile.Dispached;
+                                FileStatus statusfile = FileStatus.Dispached;
                                 string casenumber = result.CaseCreate != null ? result.CaseCreate.CaseNumber : "";
                                 TransactionId = result.CaseCreate != null ? result.CaseCreate.CommonArea != null ? result.CaseCreate.CommonArea.TransactionId : "NotAvailable" : "NotAvailable";
                                 TransactionDate = result.CaseCreate != null ? result.CaseCreate.CommonArea != null ? result.CaseCreate.CommonArea.TransactionDate.DateTime : DateTime.Now : DateTime.Now;
@@ -208,7 +208,7 @@ namespace Service.Domian.Core
                                 TransactionDate = result.ResponseMessage != null ? result.ResponseMessage.TransactionDate.DateTime  : DateTime.Now;
                                 
                                 // se registra n de intento de la creación del caso
-                                ticketfile.Status = (int)(ticketfile.Attempts <= TotalAttemps ? StatusFile.TryAgain : StatusFile.Quarantine);
+                                ticketfile.Status = (int)(ticketfile.Attempts <= TotalAttemps ? FileStatus.TryAgain : FileStatus.Quarantine);
                                 ticketfile.Response = (int)result.Code;
                                 ticketfile.Attempts = attempts;
                                 ticketfile.NoTicket = NTicket;
@@ -236,14 +236,14 @@ namespace Service.Domian.Core
                             }
                             ));
 
-                            if (resultrepo == Status.Create) this._logger.SuccessAudit("ProccesPendingTickets", $"Cache updated of file: {ticketfile.FileName}", 100);
+                            if (resultrepo == CacheStatus.Create) this._logger.SuccessAudit("ProccesPendingTickets", $"Cache updated of file: {ticketfile.FileName}", 100);
 
 
                         }
 
                     }
 
-                    var estatusfilelts = new List<int>() { (int)StatusFile.Dispached, (int)StatusFile.Quarantine };
+                    var estatusfilelts = new List<int>() { (int)FileStatus.Dispached, (int)FileStatus.Quarantine };
                     var filecache_fr = TicketRepoCore.GetTicketFiletoAttempt(estatusfilelts);
                     filecache_fr = filecache_fr.Where(p => p.FileResponseCreated == FILE_RESPONSE_NO_CREATE).ToList();
 
@@ -291,8 +291,8 @@ namespace Service.Domian.Core
 
                
 
-                var message = ticket.Status.Equals((int)StatusFile.Dispached) ? "N° de caso creado satisfactoriamente" :
-                              ticket.Status.Equals((int)StatusFile.Quarantine) ? "Problema al crear el N. de caso" : "";
+                var message = ticket.Status.Equals((int)FileStatus.Dispached) ? "N° de caso creado satisfactoriamente" :
+                              ticket.Status.Equals((int)FileStatus.Quarantine) ? "Problema al crear el N. de caso" : "";
 
                 List<string> lines = new List<string>() { string.Join("|", "NoTicket", ticket.NoTicket),
                                                           string.Join("|", "Respuesta",  ticket.Response),
@@ -309,8 +309,8 @@ namespace Service.Domian.Core
                 ticket.FullPathResponse = result ? fullpath : "";
                 var resultrepo = TicketRepoCore.ModifyTicketFile(ticket);
 
-                var msgresult = resultrepo == Status.Create ? $"Cache updated of file: {ticket.FileName}" : $"Error of create fileresponse: {ticket.FileName}";
-                var typeLog = resultrepo == Status.Create ? EventLogEntryType.SuccessAudit : EventLogEntryType.Error;
+                var msgresult = resultrepo == CacheStatus.Create ? $"Cache updated of file: {ticket.FileName}" : $"Error of create fileresponse: {ticket.FileName}";
+                var typeLog = resultrepo == CacheStatus.Create ? EventLogEntryType.SuccessAudit : EventLogEntryType.Error;
 
                 this._logger.WriteLog("RepositoryCore", typeLog, msgresult, 100);
             }

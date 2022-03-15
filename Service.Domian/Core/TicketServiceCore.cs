@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using static RikersProxy.ClientProxy;
 using RikersProxy.Entities;
 using static Service.Domian.Core.TicketRepositoryCore;
+using System.Net;
 
 namespace Service.Domian.Core
 {
@@ -49,7 +50,8 @@ namespace Service.Domian.Core
 
             public TicketServiceCore(Logger logger, ProxyCore proxycore)
             {
-               
+                this.isRun = false;
+                this.EndTask = true;
                 Extension = "txt";
 
                 this._logger = logger;
@@ -69,24 +71,35 @@ namespace Service.Domian.Core
 
             public void run()
             {
-                isRun = true;
-             //   Task.Run(() => CheckAvailableChacheFiles()).Wait();
-   
-
-                if (ThRequestTickets == null)
-                {
-                    ThRequestTickets = new Thread(new ThreadStart(runWorker));
-                   // ThRequestTickets.Name = "TicketService";
-                   // ThRequestTickets.IsBackground = true;
-                }
-                ThRequestTickets.Start();
+                this.isRun = true;
             
+                try
+                { 
+
+                    if (ThRequestTickets == null)
+                    {
+                        ThreadStart start = new ThreadStart(runWorker);
+                        ThRequestTickets = new Thread(start);
+                        ThRequestTickets.Name = "TicketService";
+                    }
+                    ThRequestTickets.Start();
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+
             }
 
 
-            public void runWorker()
+            private void runWorker()
             {
-                while (isRun)
+                this.EndTask = false;
+                this._logger.SuccessAudit("TicketServiceCore", $"Starting thread, update cache  when service is offline", 100);
+                this.update_file_cache(); // check files when service is offline
+                this._logger.SuccessAudit("TicketServiceCore", $"Start Cycle", 100);
+
+                while (this.isRun)
                 {
                     ProccesPendingTickets();
 
@@ -95,22 +108,38 @@ namespace Service.Domian.Core
                     move_files_process();
                 }
 
-                EndTask = true;
+                this.EndTask = true;
 
             }
 
             public void stop()
             {
-
-                isRun = false;
-
-                while (!EndTask);
-
-                if (ThRequestTickets != null)
+              
+                try
                 {
                     
-                    ThRequestTickets.Abort();
-                    ThRequestTickets = null;
+                    this.isRun = false;
+
+                    while (!this.EndTask) 
+                    {
+                        this._logger.SuccessAudit("TicketServiceCore", $"Stoping Thread, waiting to end the last cycle", 100);
+                        Thread.Sleep(500);
+                    }
+
+                    this._logger.SuccessAudit("TicketServiceCore", $"finish the last cycle", 100);
+
+                    if ((ThRequestTickets != null) & ThRequestTickets.IsAlive)
+                    {
+                        ThRequestTickets.Abort();
+                        ThRequestTickets = null;
+
+                        this._logger.SuccessAudit("TicketServiceCore", $"stop thread finish", 100);
+                    }
+                }
+                catch (Exception)
+                {
+
+                    throw;
                 }
 
             }
@@ -124,7 +153,7 @@ namespace Service.Domian.Core
                 // add files to cache
                 foreach (FileInfo file in file_diff)
                 {
-                    var status = utils.FileIsEmpty(file.FullName) ? StatusFile.Empty : utils.IsFileReady(file.FullName) ? StatusFile.Available : StatusFile.Busy;
+                    var status = utils.FileIsEmpty(file.FullName) ? FileStatus.Empty : utils.IsFileReady(file.FullName) ? FileStatus.Available : FileStatus.Busy;
                     TicketFileDomain fileticket = new TicketFileDomain()
                     {
                         FileName = file.Name,
@@ -140,12 +169,12 @@ namespace Service.Domian.Core
                     };
 
                     var result = this.TicketRepoCore.RegisterTicketFile(fileticket);
-                   if (result == Status.Create) this._logger.Info("update_file_cache", $"file created, name: {file.Name} size: {file.Length} bytes.", 100);
+                   if (result == CacheStatus.Create) this._logger.Info("update_file_cache", $"file created, name: {file.Name} size: {file.Length} bytes.", 100);
                 };
 
 
                 // change of files
-                var estatus_lts02 = new List<int>() { (int)StatusFile.Available, (int)StatusFile.Busy, (int)StatusFile.Empty };
+                var estatus_lts02 = new List<int>() { (int)FileStatus.Available, (int)FileStatus.Busy, (int)FileStatus.Empty };
                 var filecache2 = this.TicketRepoCore.GetTicketFiletoAttempt(estatus_lts02);
                 var filelistfrompath2 = utils.GetFileList(this.PendingPath, Extension).ToList();
 
@@ -162,14 +191,14 @@ namespace Service.Domian.Core
                     {
                         // utils.IsFileReady(e.FullPath);
 
-                        domainfile.Status = (int)(utils.IsFileReady(file.FullName) ? StatusFile.Available : StatusFile.Busy);
+                        domainfile.Status = (int)(utils.IsFileReady(file.FullName) ? FileStatus.Available : FileStatus.Busy);
                         domainfile.Length = file.Length;
                         domainfile.FullPath = file.FullName;
                         domainfile.DateModified = file.LastWriteTime;
                         domainfile.DateNextAttempt = DateTime.Now;
                         var result = this.TicketRepoCore.ModifyTicketFile(domainfile);
 
-                        if (result == Status.Create) this._logger.SuccessAudit("update_file_cache", $"file changed : {file.FileName} size: {file.Length} bytes.", 100);
+                        if (result == CacheStatus.Create) this._logger.SuccessAudit("update_file_cache", $"file changed : {file.FileName} size: {file.Length} bytes.", 100);
 
                     }
                 };
@@ -181,8 +210,8 @@ namespace Service.Domian.Core
             {
                 try
                 {
-                    
-                    var estatus_lts01 = new List<int>() { (int)StatusFile.Available, (int)StatusFile.TryAgain };
+
+                   var estatus_lts01 = new List<int>() { (int)FileStatus.Available, (int)FileStatus.TryAgain };
                     var filecache = TicketRepoCore.GetTicketFiletoAttempt(estatus_lts01);
 
                     foreach (TicketFileDomain ticketfile in filecache)
@@ -192,40 +221,31 @@ namespace Service.Domian.Core
                         if (!file_ready) this._logger.Warning("ProccesPendingTickets", $"the file {ticketfile.FileName} not cannot be read,try in 5 minutes", 100);
 
                         var tokenOk = file_ready ? _proxyCore.TokenisAvailable() : false;
-                        if (file_ready && !tokenOk)
-                        {
-                            this._logger.Warning("ProccesPendingTickets", $"token not available,try obtain in {SecondsWait} seconds", 100);
-                            toNextTime = DateTime.Now.AddSeconds(SecondsWait);
-                        }
-                        else
-                        {
-                            toNextTime = null;
-                        }
 
                         // validation ok ?
                         if (file_ready && tokenOk)
                         {
-                            // Create Case Data 
-                            var casedata = ParseCaseData(ticketfile.FullPath);
-                            // Send casedata to Rikers API
-                            var result = _proxyCore.CreateCase(casedata);
-                            // write result on log 
-                            result.Messages.ToList().ForEach(item => this._logger.WriteLog(item.Category, item.Type, $"Request Code: {item.Code} - Message: {item.Reason}", 100));
-                            // update result on cache
-                            update_create_case_cache(casedata.CustomerProblemNumber, ticketfile, result);
+                            var casedata = ParseCaseData(ticketfile.FullPath);  // Create Case Data 
+                            var result = _proxyCore.CreateCase(casedata); // Send casedata to Rikers API
+                            result.Messages.ToList().ForEach(item => this._logger.WriteLog(item.Category, item.Type, $"Request Code: {item.Code} - Message: {item.Reason}", 100));  // write result on log 
+                            update_create_case_cache(casedata.CustomerProblemNumber, ticketfile, result); // update result on cache
                         }
-                        else
+                      
+                        else if (!file_ready || !tokenOk)
                         {
-                            //ticketfile.NoTicket
-
-                            ProxyResult result = new ProxyResult();
-
-                            result.Code = System.Net.HttpStatusCode.OK;
-
-                            update_create_case_cache(ticketfile.NoTicket, ticketfile, result);
-
+                            string message = "";
+                            HttpStatusCode code = System.Net.HttpStatusCode.Conflict;
+                            message = !file_ready ? $"file not available,try obtain in {SecondsWait} seconds" : 
+                                      (file_ready && !tokenOk) ? $"token not available,try obtain in { SecondsWait} seconds":"";
+                            
+                            this._logger.Warning("ProccesPendingTickets", message, 100);  // notify 
+                            
+                            ProxyResult result = new ProxyResult() { Code = System.Net.HttpStatusCode.Conflict };
+                            var casedata = ParseCaseData(ticketfile.FullPath);   // getdata 
+                            result.Messages = new List<RikersProxy.ClientProxy.Message>();
+                            result.Messages.Add(new RikersProxy.ClientProxy.Message { Code = code.ToString(), Type = "information", Category = "ProccesPendingTickets", Reason = message });
+                            update_create_case_cache(ticketfile.NoTicket, ticketfile, result,false, message);  // update result on cache
                         }
-
                         
                     }
                 }
@@ -252,31 +272,34 @@ namespace Service.Domian.Core
                 return retval;
             }
 
-            private void update_create_case_cache(string CustomerProblemNumber, TicketFileDomain ticketfile, ProxyResult result)
+            private void update_create_case_cache(string CustomerProblemNumber, TicketFileDomain ticketfile, ProxyResult result,bool addattempt=true,string message="")
             {
                 string TransactionId;
                 DateTime TransactionDate;
-                int attempts = ticketfile.Attempts + 1;
+                int attempts= ticketfile.Attempts;
+                byte? processed = 0;
+                if (addattempt) attempts = ticketfile.Attempts + 1;
 
                 TransactionId = result.CaseCreate != null ? result.CaseCreate.CommonArea != null ? result.CaseCreate.CommonArea.TransactionId : "NotAvailable" : "NotAvailable";
                 TransactionDate = result.CaseCreate != null ? result.CaseCreate.CommonArea != null ? result.CaseCreate.CommonArea.TransactionDate.DateTime : DateTime.Now : DateTime.Now;
 
-                StatusFile statusfile;
+                FileStatus statusfile;
                 string casenumber;
                 DateTime? DateNextAttempt = null;
-                string message="";
-
+               
                 if (result.Code.Equals(System.Net.HttpStatusCode.Created))
                 {
-                    statusfile = StatusFile.Dispached;
-                    message = "N° de caso creado satisfactoriamente";
+                    statusfile = FileStatus.Dispached;
+                    message = string.IsNullOrEmpty(message) ? "N° de caso creado satisfactoriamente": message;
                     casenumber = result.CaseCreate != null ? result.CaseCreate.CaseNumber : "";
+                    processed = 1;
                 }
                 else
                 {
-                    statusfile = (attempts <= TotalAttemps ? StatusFile.TryAgain : StatusFile.Quarantine);
+                    statusfile = (attempts <= TotalAttemps ? FileStatus.TryAgain : FileStatus.Quarantine);
+                    processed = (byte?)(statusfile.Equals(FileStatus.Quarantine)?1:0);
                     DateNextAttempt = DateTime.Now.AddSeconds(SecondsWait);
-                    message = $"Petición no creada, intento {attempts} de {TotalAttemps}, proximo intento en {SecondsWait} segundos.";
+                    message = string.IsNullOrEmpty(message) ?  $"Petición no creada, intento {attempts} de {TotalAttemps}, proximo intento en {SecondsWait} segundos." : message;
                 }
 
                 ticketfile.Status = (int)statusfile;
@@ -290,6 +313,7 @@ namespace Service.Domian.Core
                 ticketfile.DateResponse = DateTime.Now;
                 ticketfile.DateNextAttempt = DateNextAttempt;
                 ticketfile.Message = message;
+                ticketfile.Processed = processed;
 
                 // Mod ticket Status
                 var resultrepo = TicketRepoCore.ModifyTicketFile(ticketfile);
@@ -309,7 +333,7 @@ namespace Service.Domian.Core
                 }
                 ));
 
-                if (resultrepo == Status.Create) this._logger.SuccessAudit("update_create_case_cache", $"Cache updated of file: {ticketfile.FileName} - Attempt: { attempts }", 100);
+                if (resultrepo == CacheStatus.Create) this._logger.SuccessAudit("update_create_case_cache", $"Cache updated of file: {ticketfile.FileName} - Attempt: { attempts }", 100);
 
             }
 
@@ -333,8 +357,8 @@ namespace Service.Domian.Core
                         ticketfile.FullPathResponse = result ? fullpath : "";
                         var resultrepo = TicketRepoCore.ModifyTicketFile(ticketfile);
 
-                        var msgresult = resultrepo == Status.Create ? $"Cache updated of file: {ticketfile.FileName}" : $"Error of create fileresponse: {ticket.FileName}";
-                        var typeLog = resultrepo == Status.Create ? EventLogEntryType.SuccessAudit : EventLogEntryType.Error;
+                        var msgresult = resultrepo == CacheStatus.Create ? $"Cache updated of file: {ticketfile.FileName}" : $"Error of create fileresponse: {ticketfile.FileName}";
+                        var typeLog = resultrepo == CacheStatus.Create ? EventLogEntryType.SuccessAudit : EventLogEntryType.Error;
 
                         this._logger.WriteLog("CreateCreateCaseResponseFile", typeLog, msgresult, 100);
 
@@ -366,7 +390,7 @@ namespace Service.Domian.Core
                     {
                         var ticketFile = this.TicketRepoCore.FindTicketFile(file.Name);
 
-                        var destiny_path = ticketFile.Status == (int)StatusFile.Dispached ? DispatchedPath : QuarantinePath;
+                        var destiny_path = ticketFile.Status == (int)FileStatus.Dispached ? DispatchedPath : QuarantinePath;
 
                         var filepath_destiny = String.Concat(destiny_path, file.Name);
 
@@ -378,7 +402,7 @@ namespace Service.Domian.Core
 
                         var result = this.TicketRepoCore.ModifyTicketFile(ticketFile);
 
-                        if (result == Status.Create) this._logger.Info("move_files_process", $"{file.Name} has moved to {destiny_path}", 100);
+                        if (result == CacheStatus.Create) this._logger.Info("move_files_process", $"{file.Name} has moved to {destiny_path}", 100);
 
                     }
                 }
@@ -408,6 +432,60 @@ namespace Service.Domian.Core
 
                 return utils.createfile(fullpath, lines);
 
+            }
+
+
+            public bool RegisterFileTickettoCache(string path) 
+            {
+
+                var file = new FileInfo(path);
+               
+                var status = utils.FileIsEmpty(path) ? FileStatus.Empty : utils.IsFileReady(path) ? FileStatus.Available : FileStatus.Busy;
+                TicketFileDomain fileticket = new TicketFileDomain()
+                {
+                    FileName = file.Name,
+                    FullPath = file.FullName,
+                    DateCreate = file.CreationTime,
+                    DateModified = file.LastWriteTime,
+                    Length = file.Length,
+                    Status = (int)status,
+                    DateNextAttempt = DateTime.Now
+                };
+
+                var result = TicketRepoCore.RegisterTicketFile(fileticket);
+
+                if (result == CacheStatus.Conflict) UpdateFileTicketCache(path);
+
+                return true;
+            }
+
+            public bool UpdateFileTicketCache(string path)
+            {
+                bool retval = false;
+
+                if (!utils.FileIsEmpty(path))
+                {
+                    var file = new FileInfo(path);
+                    var domainfile = TicketRepoCore.FindTicketFile(file.Name);
+                    if (domainfile != null && (file.Length != domainfile.Length))
+                    {
+                        // utils.IsFileReady(e.FullPath);
+
+                        domainfile.Status = (int)(utils.IsFileReady(path) ? FileStatus.Available : FileStatus.Busy);
+                        domainfile.Length = file.Length;
+                        domainfile.FullPath = file.FullName;
+                        domainfile.DateNextAttempt = DateTime.Now;
+
+                        var result = TicketRepoCore.ModifyTicketFile(domainfile);
+
+
+                        retval = (result == CacheStatus.Create);
+
+                    }
+
+                }
+
+                return retval;
             }
 
         }

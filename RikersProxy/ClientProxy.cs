@@ -330,25 +330,6 @@ namespace RikersProxy
 
                         }
 
-                        /*
-
-                        else
-                        {
-
-                            var message = response == null ? "response is null" :
-                                         !string.IsNullOrEmpty(response.Content) ? response.Content :
-                                         !string.IsNullOrEmpty(response.StatusDescription) ? response.StatusDescription :
-                                         !string.IsNullOrEmpty(response.ErrorMessage) ? response.ErrorMessage : Newtonsoft.Json.JsonConvert.SerializeObject(response);
-
-                            MessageLts.Add(new Message { Code = ((int)response.StatusCode).ToString(), Category = "API CREATE CASE", Type = "Error", Reason = message });
-
-                            return new ProxyResult() { Code = response.StatusCode, Message = message, Messages = MessageLts };
-
-                        }
-
-                        */
-
-
                     }
                     catch (Exception ex)
                     {
@@ -367,7 +348,7 @@ namespace RikersProxy
                         {
                             Code = ((int)HttpStatusCode.NotImplemented).ToString(),
                             Category = "API CREATE CASE",
-                            Type = "Errtor",
+                            Type = "Error",
                             Reason = ex.Message
                         });
 
@@ -402,21 +383,127 @@ namespace RikersProxy
         }
 
 
-        /*
-        public async Task<ProxyResult> AddComment(string endpoint, string SerialProblemNumber,string comment)
+        public ProxyResult SubmitFeedback(CommentData data)
         {
+            List<Message> MessageLts = new List<Message>();
+            string message = "";
 
+            if (Elapsed_Time_Token.TotalMinutes > 0)
+            {
+                IRestResponse response;
 
+                using (var client = new ClientApi())
+                {
+                    try
+                    {
+                        this.EndPointSendComment = this.EndPointSendComment.Replace("{casenumber}",data.CaseNumber);
+                        prepareClient(client, this.EndPointSendComment);
 
+                        response = client.SubmitFeedback(this.Token.AccessToken, data);
+
+                        if (response.StatusCode == HttpStatusCode.Created)
+                        {
+                            var FeedBackResponse = JsonConvert.DeserializeObject<ResponseFeedBack>(response.Content);
+
+                            var msg = $"successfull submit feedback:{FeedBackResponse.CaseNumber} - TransactionID: {FeedBackResponse.CommonArea.TransactionId} - TransactionDate: {FeedBackResponse.CommonArea.TransactionDate.ToString("yyyy-MM-dd HH:mm:ss")}";
+
+                            MessageLts.Add(new Message { Code = ((int)response.StatusCode).ToString(), Category = "API SUBMIT FEEDBACK", Type = "Information", Reason = msg });
+
+                            return new ProxyResult { Code = response.StatusCode, Message = msg, Messages = MessageLts, FeedBack = FeedBackResponse };
+
+                        }
+                        else
+                        {
+                            message = !string.IsNullOrEmpty(response.Content) ? response.Content : "";
+
+                            var result = JsonConvert.DeserializeObject<ResponseMessage>(response.Content);
+
+                            if (result.Messages != null)
+                            {
+                                var msg = result.Messages.Select(p => new Message() { Category = "API SUBMIT FEEDBACK", Code = p.Code, Type = p.Type, Reason = p.MessageMessage }).ToList();
+                                MessageLts.AddRange(msg);
+                            }
+                            else
+                            {
+
+                                if (response == null)
+                                {
+                                    MessageLts.Add(new Message() { Code = response.StatusCode.ToString(), Category = "API SUBMIT FEEDBACK", Type = "Error", Reason = "response is null" });
+                                }
+                                else
+                                {
+                                    if (!string.IsNullOrEmpty(response.StatusDescription)) MessageLts.Add(new Message() { Code = ((int)response.StatusCode).ToString(), Category = "API SUBMIT FEEDBACK", Type = "Error", Reason = response.StatusDescription });
+                                    if (!string.IsNullOrEmpty(response.ErrorMessage)) MessageLts.Add(new Message() { Code = ((int)response.StatusCode).ToString(), Category = "API SUBMIT FEEDBACK", Type = "Error", Reason = response.ErrorMessage });
+                                    if (!string.IsNullOrEmpty(response.Content)) MessageLts.Add(new Message() { Code = ((int)response.StatusCode).ToString(), Category = "API SUBMIT FEEDBACK", Type = "Error", Reason = response.Content });
+                                }
+
+                            }
+                            return new ProxyResult { Code = response.StatusCode, Message = $"", Messages = MessageLts, ResponseMessage = result };
+
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                        StackTrace trace = new StackTrace(ex, true);
+
+                        MessageLts.Add(new Message()
+                        {
+                            Code = ((int)HttpStatusCode.NotImplemented).ToString(),
+                            Category = "API SUBMIT FEEDBACK",
+                            Type = "Error",
+                            Reason = message
+                        }); ;
+
+                        MessageLts.Add(new Message()
+                        {
+                            Code = ((int)HttpStatusCode.NotImplemented).ToString(),
+                            Category = "API SUBMIT FEEDBACK",
+                            Type = "Error",
+                            Reason = ex.Message
+                        });
+
+                        MessageLts.Add(new Message()
+                        {
+                            Code = ((int)HttpStatusCode.NotImplemented).ToString(),
+                            Category = "API SUBMIT FEEDBACK",
+                            Type = "FaultAudit",
+                            Reason = trace.ToString()
+                        });
+
+                        return new ProxyResult { Code = HttpStatusCode.NotImplemented, Message = "Falta Error", Messages = MessageLts };
+                    }
+
+                }
+
+            }
+            else
+            {
+                MessageLts.Add(new Message()
+                {
+                    Code = ((int)HttpStatusCode.NotAcceptable).ToString(),
+                    Category = "API TOKEN",
+                    Type = "Warning",
+                    Reason = "token expired, get a new token"
+                });
+
+                return new ProxyResult() { Code = HttpStatusCode.NotAcceptable, Message = $"token expired", Messages = MessageLts };
+            }
+
+            //  return null;
         }
-        */
-        
+
+
+
+
         public class ProxyResult
         {
             public HttpStatusCode Code { get; set; }
             public string Message { get; set; }
             public List<Message> Messages { get; set; }
             public ResponseCaseCreated CaseCreate { get; set; }
+            public ResponseFeedBack FeedBack { get; set; }
             public ResponseMessage ResponseMessage { get; set; }
         }
 

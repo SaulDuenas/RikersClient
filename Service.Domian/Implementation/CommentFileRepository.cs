@@ -1,4 +1,5 @@
-﻿using Service.DataAccess.ORM;
+﻿using AutoMapper;
+using Service.DataAccess.ORM;
 using Service.Domian.Model;
 using Service.Domian.Repository;
 using System;
@@ -22,8 +23,25 @@ namespace Service.Domian.Implementation
 
         public int Create(CommentFileDomain entity)
         {
-            throw new NotImplementedException();
+            var config = new MapperConfiguration(cfg => { cfg.CreateMap<CommentFileDomain, CommentFile>(); });
+            IMapper iMapper = config.CreateMapper();
+
+            var destination = iMapper.Map<CommentFileDomain, CommentFile>(entity);
+
+            _context.CommentFile.Add(destination);
+
+            return _context.SaveChanges();
         }
+
+
+        public bool exists(string id)
+        {
+
+            var source = _context.CommentFile.Where(p => p.FileName == id).FirstOrDefault();
+
+            return (source != null);
+        }
+
 
         public int Delete(CommentFileDomain entity)
         {

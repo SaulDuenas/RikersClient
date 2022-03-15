@@ -4,6 +4,7 @@ using RikersProxy.Entities;
 using RikersProxy.Entities.General;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -24,6 +25,9 @@ namespace Service.Domian.Core
         {
             _client = clientproxy;
             _logger = logger;
+
+            this.CompanyName = ConfigurationManager.AppSettings["CompanyName"];
+            this.IbmCustomerNumber = ConfigurationManager.AppSettings["IbmCustomerNumber"];
         }
 
         public bool TokenExpired() 
@@ -34,7 +38,7 @@ namespace Service.Domian.Core
         public bool TokenisAvailable()
         {
             bool retval = true;
-
+            
             if (TokenExpired())
             {
                 _logger.Info("CREATE TOKEN", "token expired, requesting for token", 100);
@@ -46,7 +50,7 @@ namespace Service.Domian.Core
                 {
                 //    result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
 
-                    _logger.WriteLog("CREATE TOKEN", "SuccessAudit", $"Request Code: {(int)result.Code} - {result.Message} - AccessToken: {_client.Token.AccessToken} - ExpiresIn: {_client.Token.ExpiresIn}", 100);
+                    _logger.SuccessAudit("CREATE TOKEN", $"Request Code: {(int)result.Code} - {result.Message} - AccessToken: {_client.Token.AccessToken} - ExpiresIn: {_client.Token.ExpiresIn}", 100);
 
                     retval = true;
                 }
@@ -66,22 +70,23 @@ namespace Service.Domian.Core
         
         public ProxyResult CreateCase(CaseData casedata ) 
         {
-           /*
-            if (await TokenisOk())
-            {
-              
-
-            }
-           */
-
-           // var casedata = getCaseData("Subject de creación de Caso", "REPORTING DEVICE", "MX", "123456");
-
+         
             var result = _client.CreateCase(casedata);
 
-            result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
+           // result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
 
             return result;
 
+        }
+
+        public ProxyResult SubmitFeedback(CommentData commentdata) 
+
+        {
+            var result = _client.SubmitFeedback(commentdata);
+
+            // result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
+
+            return result;
         }
 
 
@@ -97,8 +102,9 @@ namespace Service.Domian.Core
 
             casedata.Customer = new Customer()
             {
-                CompanyName =  this.CompanyName,    // ConfigurationManager.AppSettings["CompanyName"],
-                IbmCustomerNumber =  this.IbmCustomerNumber   // ConfigurationManager.AppSettings["IbmCustomerNumber"]
+                CompanyName = string.IsNullOrEmpty(this.CompanyName) ? "" : this.IbmCustomerNumber,
+                IbmCustomerNumber = string.IsNullOrEmpty(this.IbmCustomerNumber) ? "" : this.IbmCustomerNumber
+
             };
 
             casedata.CaseContact = new CaseContact() { GivenName = "Donald", FamilyName = "Duck", Phone = "+555555", Email = "donald@duck.false" };
@@ -107,7 +113,6 @@ namespace Service.Domian.Core
 
             return casedata;
         }
-
 
     }
 }

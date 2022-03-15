@@ -67,6 +67,28 @@ namespace RikersProxy
             return response;
         }
 
+        public IRestResponse SubmitFeedback(string token, CommentData data)
+        {
+            _client.BaseUrl = BaseUrl;
+            _client.Timeout = -1;
+
+            if (this.x509CertificateCollection != null) _client.ClientCertificates = x509CertificateCollection;
+
+            var request = new RestRequest(Method.POST);
+            request.RequestFormat = DataFormat.Json;
+            request.AddHeader("Content-Type", "application/json");
+            request.AddHeader("Authorization", "Bearer " + token);
+
+            // request.AddBody(JsonConvert.SerializeObject(data));
+
+            request.AddParameter("application/json", JsonConvert.SerializeObject(data), ParameterType.RequestBody);
+
+            IRestResponse response = _client.Execute(request);
+
+            return response;
+        }
+
+
         public void Dispose()
         {
             if (_client != null) { _client = null; }

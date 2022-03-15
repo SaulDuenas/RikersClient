@@ -25,11 +25,9 @@ namespace ServiceApp
     internal partial class TicketService : ServiceBase
     {
         private bool BkgProccessIsOn = false;
-        private bool StopBkgProcess = false;
-
+      
         private int start_counter = 0;
 
-        private string _exePath;
         //  private EventViewertExt _eventExt = null;
         private IClientProxy _proxyCli = null;
 
@@ -64,14 +62,7 @@ namespace ServiceApp
             this._logger = new Logger();
 
             if (startMonitoring()) {
-
-                if (this.backgroundWorker1.IsBusy != true)
-                {
-                    BkgProccessIsOn = true;
-                    backgroundWorker1.RunWorkerAsync("TicketService");
-                    this._logger.SuccessAudit("Service", $"BkgProccessIsOn flag is ON", 100);
-
-                }
+                this._ticketsrvcore.run();
             }
 
             eventLog1.WriteEntry("End OnStart.");
@@ -84,41 +75,21 @@ namespace ServiceApp
                 eventLog1.WriteEntry("In OnStop.");
                 this._logger.Info("Service", $"stop monitoring - sprint {start_counter}", 100);
 
-
-                // TODO: Add code here to perform any tear-down necessary to stop your service.
-                this._logger.SuccessAudit("Service", $"StopBkgProcess -> {StopBkgProcess}", 100);
-                BkgProccessIsOn = false;
-                this._logger.SuccessAudit("Service", $"BkgProccessIsOn flag is OFF", 100);
-                backgroundWorker1.CancelAsync();
-
-                while (!StopBkgProcess);
-
-                this._logger.SuccessAudit("Service", $"StopBkgProcess -> {StopBkgProcess}", 100);
-
-                // this._ticketsrvcore.stop();
-                if (observer.EnableRaisingEvents)
-                {
-                    // this._repositoryCore = null;
-                    // this._proxyCore = null;
-
-                    observer.EnableRaisingEvents = false;
-
-                    this._proxyCli = null;
-                    this._filelog = null;
-                    this._logger = null;
-
-                }
-
-               
-                eventLog1.WriteEntry("backgroundWorker1 canceled");
+                StopMonitoring();
 
                 eventLog1.WriteEntry("End OnStop.");
 
                 this._logger.Info("Service", $"Service Stoped", 100);
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                StackTrace trace = new StackTrace(ex, true);
+
+                _logger.WriteLog("Service", EventLogEntryType.Error, "Error: " + ex.Message, 100);
+                _logger.WriteLog("Service", EventLogEntryType.Error, "InnerException: " + (ex.InnerException != null ? ex.InnerException.InnerException.ToString() : ""), 100);
+                _logger.WriteLog("Service", EventLogEntryType.FailureAudit, "Stacktrace: " + trace.ToString(), 100);
+
                 throw;
             }
         }
@@ -148,7 +119,7 @@ namespace ServiceApp
 
                 this._ticketsrvcore = new TicketServiceCore(this._logger, this._proxyCore);
 
-                this._ticketsrvcore.update_file_cache(); // check files when service is offline
+               // this._ticketsrvcore.update_file_cache(); // check files when service is offline
 
               //  this._ticketsrvcore.run();
                 //  this._servicecore.CheckAvailableChacheFiles();
@@ -170,22 +141,31 @@ namespace ServiceApp
 
         private bool StopMonitoring()
         {
-            this._logger.SuccessAudit("Service", $"in StopMonitoring method", 100);
+            this._logger.Info("Service", $"stoping Task", 100);
+            this._ticketsrvcore.stop();
 
-            BkgProccessIsOn = false;
+            this._logger.Info("Service", $"stoping Observer", 100);
 
-            while (!StopBkgProcess);
+            this._logger.SuccessAudit("Service", $"observer.EnableRaisingEvents = {observer.EnableRaisingEvents}", 100);
 
-            // this._ticketsrvcore.stop();
-            if (observer.EnableRaisingEvents)
+            /*
+
+            if (observer != null && observer.EnableRaisingEvents)
             {
                 // this._repositoryCore = null;
                 // this._proxyCore = null;
 
                 observer.EnableRaisingEvents = false;
 
+                this._proxyCli = null;
+                this._filelog = null;
+                this._logger = null;
+
                 return true;
+
             }
+
+            */
 
             return false;
 
@@ -214,14 +194,8 @@ namespace ServiceApp
                 backgroundWorker1.ReportProgress(10);
 
             }
-            StopBkgProcess = true;
             this._logger.SuccessAudit("Service", $"backgroundWorker1.CancellationPending -> {backgroundWorker1.CancellationPending}", 100);
-            /*
-            if (backgroundWorker1.CancellationPending == true)
-            {
-                e.Cancel = true;
-            }
-            */
+  
         }
 
         private void backgroundWorker1_OnProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -243,7 +217,7 @@ namespace ServiceApp
             var file = new FileInfo(e.FullPath);
             this._logger.Info("Service", $"file created, name: {file.Name} size: {file.Length} bytes.", 100);
 
-            var status = utils.FileIsEmpty(e.FullPath) ? StatusFile.Empty : utils.IsFileReady(e.FullPath) ? StatusFile.Available : StatusFile.Busy;
+            var status = utils.FileIsEmpty(e.FullPath) ? FileStatus.Empty : utils.IsFileReady(e.FullPath) ? FileStatus.Available : FileStatus.Busy;
             TicketFileDomain fileticket = new TicketFileDomain()
             {
                 FileName = file.Name,
@@ -260,7 +234,7 @@ namespace ServiceApp
 
             //  var result =  this._repositoryCore.RegisterTicketFile(fileticket);
 
-            if (result == Status.Conflict) filechanged(e.FullPath);
+            if (result == CacheStatus.Conflict) filechanged(e.FullPath);
 
         }
 
@@ -294,14 +268,14 @@ namespace ServiceApp
                 {
                     // utils.IsFileReady(e.FullPath);
 
-                    domainfile.Status = (int)(utils.IsFileReady(path) ? StatusFile.Available : StatusFile.Busy);
+                    domainfile.Status = (int)(utils.IsFileReady(path) ? FileStatus.Available : FileStatus.Busy);
                     domainfile.Length = file.Length;
                     domainfile.FullPath = file.FullName;
                     domainfile.DateNextAttempt = DateTime.Now;
 
                     var result = _ticketsrvcore.TicketRepoCore.ModifyTicketFile(domainfile);
 
-                    if (result == Status.Create) this._logger.Info("Service", $"file changed : {file.Name} size: {file.Length} bytes.", 100);
+                    if (result == CacheStatus.Create) this._logger.Info("Service", $"file changed : {file.Name} size: {file.Length} bytes.", 100);
 
                 }
             }

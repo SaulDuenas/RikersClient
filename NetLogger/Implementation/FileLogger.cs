@@ -35,7 +35,9 @@ namespace NetLogger.Implementation
 
                 }
 
-                this.FileName = string.IsNullOrEmpty(this.FileName) ? this.FileName = DateTime.Now.ToString("yyyyMMdd") + ".log" : FileName.Replace("yyyyMMdd", DateTime.Now.ToString("yyyyMMdd"));
+                this.FileName = ConfigurationManager.AppSettings["LogFileName"];
+                string dateformat = DateTime.Now.ToString("yyyyMMdd");
+                this.FileName = string.IsNullOrEmpty(this.FileName) ? dateformat + ".log" : FileName.Replace("yyyyMMdd", dateformat);
 
                 using (FileStream filestream = new FileStream(string.Format("{0}\\{1}", this.strPath, this.FileName), FileMode.Append, FileAccess.Write))
                 {
@@ -46,7 +48,6 @@ namespace NetLogger.Implementation
                 }
 
                 return true;
-
 
             }
             catch (Exception ex)

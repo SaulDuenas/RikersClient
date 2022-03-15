@@ -52,6 +52,8 @@
     <Compile Include="ClientProxy.cs" />
     <Compile Include="ClientProxyAsync.cs" />
     <Compile Include="ClientApi.cs" />
+    <Compile Include="Entities\CommentData.cs" />
+    <Compile Include="Entities\ResponseFeedBack.cs" />
     <Compile Include="Entities\ResponseCaseCreated.cs" />
     <Compile Include="Entities\CaseData.cs" />
     <Compile Include="Entities\CommonArea.cs" />

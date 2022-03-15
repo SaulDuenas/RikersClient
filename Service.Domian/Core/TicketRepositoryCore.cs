@@ -30,7 +30,7 @@ namespace Service.Domian.Core
         }
 
        
-        public Status RegisterTicketFile(TicketFileDomain ticketfiledomain)
+        public CacheStatus RegisterTicketFile(TicketFileDomain ticketfiledomain)
         {
            
             try
@@ -42,12 +42,12 @@ namespace Service.Domian.Core
                     var created = ticketfile.Create(ticketfiledomain);
                     ticketfile.Dispose();
 
-                    var type = created != 0 ? EventLogEntryType.Information : EventLogEntryType.Error;
-                    var message = created != 0 ? "Registro de FileTicket satisfactoriamente" : "Conflicto al registrar el fileticket";
+                    var type = created != 0 ? EventLogEntryType.SuccessAudit : EventLogEntryType.FailureAudit;
+                    var message = created != 0 ? $"{ticketfiledomain.FileName} registration successful" : $"Conflict registering the {ticketfiledomain.FileName}";
 
                     _logger.WriteLog("RegisterTicketFile", type, message, 100);
 
-                    return created != 0 ? Status.Create : Status.Conflict;
+                    return created != 0 ? CacheStatus.Create : CacheStatus.Conflict;
                 }
                 else
                 {
@@ -55,7 +55,7 @@ namespace Service.Domian.Core
                    
                     _logger.WriteLog("RegisterTicketFile", EventLogEntryType.Warning, $"No se puede registrar el fileTicket, {ticketfiledomain.FileName} ya fue previamente registrado", 100);
 
-                    return Status.Conflict;
+                    return CacheStatus.Conflict;
                 }
 
             }
@@ -67,12 +67,12 @@ namespace Service.Domian.Core
                 _logger.WriteLog("RegisterTicketFile", EventLogEntryType.Error, "InnerException: " +(ex.InnerException != null ? ex.InnerException.InnerException.ToString() : ""), 100);
                 _logger.WriteLog("RegisterTicketFile", EventLogEntryType.FailureAudit, "Stacktrace: " + trace.ToString(), 100);
 
-                return Status.InternalError;
+                return CacheStatus.InternalError;
             }
 
         }
 
-        public Status ModifyTicketFile(TicketFileDomain ticketfiledomain)
+        public CacheStatus ModifyTicketFile(TicketFileDomain ticketfiledomain)
         {
           
             try
@@ -89,7 +89,7 @@ namespace Service.Domian.Core
 
                     _logger.WriteLog("ModifyTicketFile", type, message, 100);
 
-                    return created != 0 ? Status.Create : Status.Conflict;
+                    return created != 0 ? CacheStatus.Create : CacheStatus.Conflict;
 
                 }
                 else
@@ -98,7 +98,7 @@ namespace Service.Domian.Core
                 
                     _logger.WriteLog("ModifyTicketFile", EventLogEntryType.Warning, $"No se puede actualizar el fileTicket ,{ticketfiledomain.FileName} no se encuentra registrado", 100);
 
-                    return Status.Conflict;
+                    return CacheStatus.Conflict;
 
                 }
 
@@ -111,7 +111,7 @@ namespace Service.Domian.Core
                 _logger.WriteLog("ModifyTicketFile", EventLogEntryType.Error, "InnerException: " + (ex.InnerException != null ? ex.InnerException.InnerException.ToString() : ""), 100);
                 _logger.WriteLog("ModifyTicketFile", EventLogEntryType.FailureAudit, "Stacktrace: " + trace.ToString(), 100);
 
-                return Status.InternalError;
+                return CacheStatus.InternalError;
             }
         }
 
@@ -165,7 +165,7 @@ namespace Service.Domian.Core
         {
             try
             {
-                var statusfileLts = new List<int>() { (int)StatusFile.Dispached, (int)StatusFile.Quarantine };
+                var statusfileLts = new List<int>() { (int)FileStatus.Dispached, (int)FileStatus.Quarantine };
 
                 TicketFileRepository ticketfile = new TicketFileRepository();
 
@@ -200,7 +200,7 @@ namespace Service.Domian.Core
         {
             try
             {
-                var statusfileLts = new List<int>() { (int)StatusFile.Dispached, (int)StatusFile.Quarantine, (int)StatusFile.TryAgain };
+                var statusfileLts = new List<int>() { (int)FileStatus.Dispached, (int)FileStatus.Quarantine, (int)FileStatus.TryAgain };
 
                 TicketFileRepository ticketfile = new TicketFileRepository();
 
@@ -299,28 +299,6 @@ namespace Service.Domian.Core
                 return null;
 
             }
-        }
-
-
-        public enum Status
-        {
-            Found = 200,
-            Create = 201,
-            NotFound = 404,
-            Conflict = 409,
-            InternalError = 500
-        }
-
-
-        public enum StatusFile
-        {
-            Empty = 10,
-            Busy = 20,
-            Available = 30,
-            Dispached = 40,
-            Quarantine = 50,
-            TryAgain = 60
-
         }
 
     }

@@ -68,7 +68,7 @@ namespace consoleApp
             button1.Enabled = false;
 
             txtUrl.Text = ConfigurationManager.AppSettings["BaseUrl"];
-            txtInboundPath.Text = ConfigurationManager.AppSettings["TicketsPending"];
+            txtInboundPath.Text = ConfigurationManager.AppSettings["PathTicketsPending"];
             txtfilter.Text = ConfigurationManager.AppSettings["Filter"];
         }
 
@@ -219,37 +219,22 @@ namespace consoleApp
 
         private void observer_Created(object sender, FileSystemEventArgs e)
         {
-            var file = new FileInfo(e.FullPath);
-            this._logger.Info("UITesting", $"file created, name: {file.Name} size: {file.Length} bytes.", 100);
+            this._logger.Info("UITesting", $"file created, name: {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
 
-            var status = utils.FileIsEmpty(e.FullPath) ? StatusFile.Empty : utils.IsFileReady(e.FullPath) ? StatusFile.Available : StatusFile.Busy;
-            TicketFileDomain fileticket = new TicketFileDomain()
-            {
-                FileName = file.Name,
-                FullPath = file.FullName,
-                DateCreate = file.CreationTime,
-                DateModified = file.LastWriteTime,
-                Length = file.Length,
-                Status = (int)status,
-                DateNextAttempt = DateTime.Now
-            };
-
-
-            var result = _ticketsrvcore.TicketRepoCore.RegisterTicketFile(fileticket);
-
-          //  var result =  this._repositoryCore.RegisterTicketFile(fileticket);
-
-            if (result == Status.Conflict) filechanged(e.FullPath);
+            this._ticketsrvcore.RegisterFileTickettoCache(e.FullPath);
 
         }
 
         private void observer_Changed(object sender, FileSystemEventArgs e)
         {
-            this.filechanged(e.FullPath);
+            var result = this._ticketsrvcore.UpdateFileTicketCache(e.FullPath);
+
+            if (result) this._logger.Info("UITesting", $"file changed : {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
+
 
         }
 
-       
+
 
         private void observer_Deleted(object sender, FileSystemEventArgs e)
         {
@@ -258,32 +243,6 @@ namespace consoleApp
 
         private void observer_Renamed(object sender, RenamedEventArgs e)
         {
-
-        }
-
-
-
-        public void  filechanged(string path)
-        {
-            if (!utils.FileIsEmpty(path))
-            {
-                var file = new FileInfo(path);
-                var domainfile = _ticketsrvcore.TicketRepoCore.FindTicketFile(file.Name);
-                if (domainfile != null && (file.Length != domainfile.Length))
-                {
-                    // utils.IsFileReady(e.FullPath);
-
-                    domainfile.Status = (int)(utils.IsFileReady(path) ? StatusFile.Available : StatusFile.Busy);
-                    domainfile.Length = file.Length;
-                    domainfile.FullPath = file.FullName;
-                    domainfile.DateNextAttempt = DateTime.Now;
-
-                    var result = _ticketsrvcore.TicketRepoCore.ModifyTicketFile(domainfile);
-
-                    if (result == Status.Create) this._logger.Info("UITesting", $"file changed : {file.Name} size: {file.Length} bytes.", 100);
-
-                }
-            }
 
         }
 

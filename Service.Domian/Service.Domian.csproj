@@ -60,6 +60,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\AttemptTicketRepositoryCore.cs" />
+    <Compile Include="Core\CommentRepositoryCore.cs" />
+    <Compile Include="Core\CommonCore.cs" />
     <Compile Include="Core\ProxyCore.cs" />
     <Compile Include="Core\TicketRepositoryCore.cs" />
     <Compile Include="Core\TicketServiceCore.cs" />
