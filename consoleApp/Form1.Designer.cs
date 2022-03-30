@@ -42,9 +42,11 @@ namespace consoleApp
             this.label1 = new System.Windows.Forms.Label();
             this.txtInboundPath = new System.Windows.Forms.TextBox();
             this.listBox1 = new System.Windows.Forms.ListBox();
-            this.observer = new System.IO.FileSystemWatcher();
+            this.obsTickets = new System.IO.FileSystemWatcher();
+            this.obsFeedBack = new System.IO.FileSystemWatcher();
             this.groupBox1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.observer)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.obsTickets)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.obsFeedBack)).BeginInit();
             this.SuspendLayout();
             // 
             // btnStop
@@ -178,14 +180,23 @@ namespace consoleApp
             this.listBox1.Size = new System.Drawing.Size(610, 212);
             this.listBox1.TabIndex = 20;
             // 
-            // observer
+            // obsTickets
             // 
-            this.observer.EnableRaisingEvents = true;
-            this.observer.SynchronizingObject = this;
-            this.observer.Changed += new System.IO.FileSystemEventHandler(this.observer_Changed);
-            this.observer.Created += new System.IO.FileSystemEventHandler(this.observer_Created);
-            this.observer.Deleted += new System.IO.FileSystemEventHandler(this.observer_Deleted);
-            this.observer.Renamed += new System.IO.RenamedEventHandler(this.observer_Renamed);
+            this.obsTickets.EnableRaisingEvents = true;
+            this.obsTickets.SynchronizingObject = this;
+            this.obsTickets.Changed += new System.IO.FileSystemEventHandler(this.obsTickets_Changed);
+            this.obsTickets.Created += new System.IO.FileSystemEventHandler(this.obsTickets_Created);
+            this.obsTickets.Deleted += new System.IO.FileSystemEventHandler(this.obsTickets_Deleted);
+            this.obsTickets.Renamed += new System.IO.RenamedEventHandler(this.obsTickets_Renamed);
+            // 
+            // obsComments
+            // 
+            this.obsFeedBack.EnableRaisingEvents = true;
+            this.obsFeedBack.SynchronizingObject = this;
+            this.obsFeedBack.Changed += new System.IO.FileSystemEventHandler(this.obsComments_Changed);
+            this.obsFeedBack.Created += new System.IO.FileSystemEventHandler(this.obsComments_Created);
+            this.obsFeedBack.Deleted += new System.IO.FileSystemEventHandler(this.obsComments_Deleted);
+            this.obsFeedBack.Renamed += new System.IO.RenamedEventHandler(this.obsComments_Renamed);
             // 
             // Form1
             // 
@@ -198,7 +209,8 @@ namespace consoleApp
             this.Text = "Form1";
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.observer)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.obsTickets)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.obsFeedBack)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -215,10 +227,11 @@ namespace consoleApp
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox txtInboundPath;
         private System.Windows.Forms.ListBox listBox1;
-        private System.IO.FileSystemWatcher observer;
+        private System.IO.FileSystemWatcher obsTickets;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox txtProblemNumber;
+        private System.IO.FileSystemWatcher obsFeedBack;
     }
 }
 

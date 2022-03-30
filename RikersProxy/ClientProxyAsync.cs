@@ -172,7 +172,7 @@ namespace RikersProxy
                     {
                         MessageLts = prepareClient(client, this.EndPointGetToken);
 
-                        var task = new Task<IRestResponse>(() => client.ObtainToken());
+                        var task = new Task<IRestResponse>(() => client.GetAccessToken());
                         task.Start();
 
                         response = await task;

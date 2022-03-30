@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace NetLogger.Base
 {
-    public abstract class LoggerBase : ILogger
+    public abstract class LoggerBase : ILoggerBase
     {
         // private List<uData> _EventLogSelect = new List<uData>();
 

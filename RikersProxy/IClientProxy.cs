@@ -12,13 +12,13 @@ namespace RikersProxy
         string SerialCert { get; set; }
         string EndPointGetToken { get; set; }
         string EndPointCreateCase { get; set; }
-        string EndPointSendComment { get; set; }
+        string EndPointFeedBack { get; set; }
 
         TimeSpan Elapsed_Time_Token { get; }
         Token Token { get; set; }
 
         ProxyResult CreateCase(CaseData data);
         ProxyResult SubmitFeedback(CommentData data);
-        ProxyResult TokenRequest();
+        ProxyResult GetAccessToken();
     }
 }

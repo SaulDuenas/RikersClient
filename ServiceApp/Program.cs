@@ -24,6 +24,7 @@ namespace ServiceApp
             ServicesToRun = new ServiceBase[]
             {
                 new TicketService()
+            //    new FeedBackService()
             };
 
             ServiceBase.Run(ServicesToRun);

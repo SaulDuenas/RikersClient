@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static RikersProxy.ClientProxyAsync;
 
-namespace Service.Domian.Core
+namespace Service.Domian.Core.Proxy
 {
     public class ProxyCoreAsync
     {

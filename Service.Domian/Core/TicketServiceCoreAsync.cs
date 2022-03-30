@@ -1,5 +1,6 @@
 ﻿using NetLogger.Implementation;
-using Service.Domian.Core;
+using Service.Domian.Core.Proxy;
+using Service.Domian.Core.Repo;
 using Service.Domian.Model;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Service.Domian.Core.TicketRepositoryCore;
+
 
 namespace Service.Domian.Core
 {
@@ -88,7 +89,7 @@ namespace Service.Domian.Core
             public void update_file_cache()
             {
                 var filelistfrompath = utils.GetFileList(this.PendingPath, "txt").ToList();
-                var filecache = this.TicketRepoCore.GetTicketFileList();
+                var filecache = this.TicketRepoCore.GetAllFileTickets();
                 var file_diff = filecache == null? filelistfrompath.ToList() : filelistfrompath.Where(p => !(filecache.Select(s => s.FileName)).Contains(p.Name)).ToList();
 
                 // add files to cache
@@ -115,8 +116,8 @@ namespace Service.Domian.Core
 
 
                 // change of files
-                var estatus_lts02 = new List<int>() { (int)FileStatus.Available, (int)FileStatus.Busy, (int)FileStatus.Empty };
-                var filecache2 = this.TicketRepoCore.GetTicketFiletoAttempt(estatus_lts02);
+                
+                var filecache2 = this.TicketRepoCore.GetFileTicketstoPendingProcess();
                 var filelistfrompath2 = utils.GetFileList(this.PendingPath, "txt").ToList();
 
                 var files = (from fl in filelistfrompath2
@@ -127,7 +128,7 @@ namespace Service.Domian.Core
 
                 foreach (var file in files)
                 {
-                    var domainfile = this.TicketRepoCore.FindTicketFile(file.FileName);
+                    var domainfile = this.TicketRepoCore.GetFileTicket(file.FileName);
                     if (domainfile != null)
                     {
                         // utils.IsFileReady(e.FullPath);
@@ -164,8 +165,8 @@ namespace Service.Domian.Core
             {
                 try
                 {
-                    var estatus_lts01 = new List<int>() { (int)FileStatus.Available, (int)FileStatus.TryAgain };
-                    var filecache = TicketRepoCore.GetTicketFiletoAttempt(estatus_lts01);
+                    
+                    var filecache = TicketRepoCore.GetFileTicketstoPendingProcess();
 
                     foreach (TicketFileDomain ticketfile in filecache)
                     {
@@ -244,7 +245,7 @@ namespace Service.Domian.Core
                     }
 
                     var estatusfilelts = new List<int>() { (int)FileStatus.Dispached, (int)FileStatus.Quarantine };
-                    var filecache_fr = TicketRepoCore.GetTicketFiletoAttempt(estatusfilelts);
+                    var filecache_fr = TicketRepoCore.GetFileTicketstoPendingProcess();
                     filecache_fr = filecache_fr.Where(p => p.FileResponseCreated == FILE_RESPONSE_NO_CREATE).ToList();
 
                     foreach (TicketFileDomain ticketfile in filecache_fr)

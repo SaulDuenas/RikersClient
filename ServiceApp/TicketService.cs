@@ -16,26 +16,24 @@ using System.ServiceProcess;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using static Service.Domian.Core.TicketRepositoryCore;
-
+using Service.Domian.Core.Proxy;
 
 namespace ServiceApp
 {
     [RunInstaller(true)]
     internal partial class TicketService : ServiceBase
     {
-        private bool BkgProccessIsOn = false;
-      
+       
         private int start_counter = 0;
 
         //  private EventViewertExt _eventExt = null;
-        private IClientProxy _proxyCli = null;
+       // private IClientProxy _proxyCli = null;
 
-        private Logger _logger = null;
+        private ILogger _logger = null;
         private FileLogger _filelog = null;
 
-        private ProxyCore _proxyCore = null;
-        private TicketServiceCore _ticketsrvcore = null;
+        private TicketServiceCore _ticketSrvCore = null;
+        private FeedBackServiceCore _feedbackSrvCore = null;
 
         public TicketService()
         {
@@ -53,16 +51,23 @@ namespace ServiceApp
 
         protected override void OnStart(string[] args)
         {
+   
+
             eventLog1.WriteEntry("In OnStart.");
 
             // TODO: Add code here to start your service.
 
-            this._proxyCli = new ClientProxy();
+          //  this._proxyCli = ClientProxy.Instance;
             this._filelog = new FileLogger();
             this._logger = new Logger();
+            this._logger.LogAppender.Add(_filelog);
 
             if (startMonitoring()) {
-                this._ticketsrvcore.run();
+                this._ticketSrvCore.run();
+                this._feedbackSrvCore.run();
+                
+                this._logger.Info("Service", $"start monitoring - sprint {start_counter}", 100);
+
             }
 
             eventLog1.WriteEntry("End OnStart.");
@@ -103,191 +108,129 @@ namespace ServiceApp
 
         private bool startMonitoring()
         {
-            
-            this._logger.LogAppender.Add(_filelog);
+            bool retval = false;
+
             start_counter++;
 
-            this._proxyCore = new ProxyCore(this._proxyCli, this._logger);
-
-            string path_observer = ConfigurationManager.AppSettings["PathTicketsPending"];
+            // this._proxyCore = new ProxyCore(this._proxyCli, this._logger);
             string filter = ConfigurationManager.AppSettings["Filter"];
-            if (Directory.Exists(path_observer))
+
+            string pathPendingTickets = ConfigurationManager.AppSettings["PathTicketsPending"];
+          
+            if (Directory.Exists(pathPendingTickets))
             {
-                observer.Path = path_observer;
-                observer.Filter = filter;
-                observer.EnableRaisingEvents = true;
+                obsPathtickets.Path = pathPendingTickets;
+                obsPathtickets.Filter = filter;
+                obsPathtickets.EnableRaisingEvents = true;
 
-                this._ticketsrvcore = new TicketServiceCore(this._logger, this._proxyCore);
+                this._ticketSrvCore = new TicketServiceCore(this._logger);
 
-               // this._ticketsrvcore.update_file_cache(); // check files when service is offline
-
-              //  this._ticketsrvcore.run();
-                //  this._servicecore.CheckAvailableChacheFiles();
-
-                this._logger.Info("Service", $"start monitoring - sprint {start_counter}", 100);
-
-                return true;
+                retval = true;
             }
             else
             {
-                if (string.IsNullOrEmpty(path_observer)) this._logger.Error("Service", $"Parameter PathTicketsPending is Empty or not exist, check the parameter PathTicketsPending on App.Config.", 100);
-                if (!Directory.Exists(path_observer)) this._logger.Error("Service", $"Path {path_observer} not exist", 100);
+                if (string.IsNullOrEmpty(pathPendingTickets)) this._logger.Error("Service", $"Parameter PathTicketsPending is Empty or not exist, check the parameter PathTicketsPending on App.Config.", 100);
+                if (!Directory.Exists(pathPendingTickets)) this._logger.Error("Service", $"Path {pathPendingTickets} not exist", 100);
 
-                return false;
+                retval = false;
             }
 
-            //return retval;
+            string pathPendingFeedBack = ConfigurationManager.AppSettings["PathCommentsPending"];
+
+            if (Directory.Exists(pathPendingFeedBack))
+            {
+                obsPathFeedBack.Path = pathPendingFeedBack;
+                obsPathFeedBack.Filter = filter;
+                obsPathFeedBack.EnableRaisingEvents = true;
+
+                this._feedbackSrvCore = new  FeedBackServiceCore(this._logger);
+
+                retval = true;
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(pathPendingFeedBack)) this._logger.Error("Service", $"Parameter PathCommentsPending is Empty or not exist, check the parameter PathCommentsPending on App.Config.", 100);
+                if (!Directory.Exists(pathPendingFeedBack)) this._logger.Error("Service", $"Path {pathPendingFeedBack} not exist", 100);
+
+                retval = false;
+            }
+            
+            return retval;
         }
 
         private bool StopMonitoring()
         {
             this._logger.Info("Service", $"stoping Task", 100);
-            this._ticketsrvcore.stop();
+            this._ticketSrvCore.stop();
+            this._feedbackSrvCore.stop();
 
             this._logger.Info("Service", $"stoping Observer", 100);
 
-            this._logger.SuccessAudit("Service", $"observer.EnableRaisingEvents = {observer.EnableRaisingEvents}", 100);
-
-            /*
-
-            if (observer != null && observer.EnableRaisingEvents)
-            {
-                // this._repositoryCore = null;
-                // this._proxyCore = null;
-
-                observer.EnableRaisingEvents = false;
-
-                this._proxyCli = null;
-                this._filelog = null;
-                this._logger = null;
-
-                return true;
-
-            }
-
-            */
+            this._logger.SuccessAudit("Service", $"observer.EnableRaisingEvents = {obsPathtickets.EnableRaisingEvents}", 100);
 
             return false;
 
         }
 
-
-
-        /************************************************************************
-                                            EVENTS
-         
-         ************************************************************************/
-
-        private void backgroundWorker1_OnDoWork(object sender, DoWorkEventArgs e)
-        {
-            while (BkgProccessIsOn)
-            {
-                // principal Process here
-
-                this._ticketsrvcore.ProccesPendingTickets();
-
-                this._ticketsrvcore.create_response_file_list();
-
-                this._ticketsrvcore.move_files_process();
-
-                // report progress
-                backgroundWorker1.ReportProgress(10);
-
-            }
-            this._logger.SuccessAudit("Service", $"backgroundWorker1.CancellationPending -> {backgroundWorker1.CancellationPending}", 100);
-  
-        }
-
-        private void backgroundWorker1_OnProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-          //  this._logger.SuccessAudit("Service", $"OnProgressChanged", 100);
-
-        }
-
-        private void backgroundWorker1_OnCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            this._logger.SuccessAudit("Service", $"OnCompleted", 100);
-
-        }
-
-
-
-        private void observer_Created(object sender, FileSystemEventArgs e)
+        /* Eventos de identificacion de archivos de tickets */
+        private void obsPathtickets_Created(object sender, FileSystemEventArgs e)
         {
             var file = new FileInfo(e.FullPath);
             this._logger.Info("Service", $"file created, name: {file.Name} size: {file.Length} bytes.", 100);
-
-            var status = utils.FileIsEmpty(e.FullPath) ? FileStatus.Empty : utils.IsFileReady(e.FullPath) ? FileStatus.Available : FileStatus.Busy;
-            TicketFileDomain fileticket = new TicketFileDomain()
-            {
-                FileName = file.Name,
-                FullPath = file.FullName,
-                DateCreate = file.CreationTime,
-                DateModified = file.LastWriteTime,
-                Length = file.Length,
-                Status = (int)status,
-                DateNextAttempt = DateTime.Now
-            };
-
-
-            var result = _ticketsrvcore.TicketRepoCore.RegisterTicketFile(fileticket);
-
-            //  var result =  this._repositoryCore.RegisterTicketFile(fileticket);
-
-            if (result == CacheStatus.Conflict) filechanged(e.FullPath);
-
+            this._ticketSrvCore.RegisterFileTickettoCache(e.FullPath);
+           
         }
 
-        private void observer_Changed(object sender, FileSystemEventArgs e)
+        private void obsPathtickets_Changed(object sender, FileSystemEventArgs e)
         {
-            this.filechanged(e.FullPath);
+            var result = this._ticketSrvCore.UpdateFileTicketCache(e.FullPath);
+
+            if (result) this._logger.Info("Service", $"Ticket file changed : {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
 
         }
 
-
-
-        private void observer_Deleted(object sender, FileSystemEventArgs e)
+        private void obsPathtickets_Deleted(object sender, FileSystemEventArgs e)
         {
 
         }
 
-        private void observer_Renamed(object sender, RenamedEventArgs e)
+        private void obsPathtickets_Renamed(object sender, RenamedEventArgs e)
         {
 
         }
 
 
-
-        public void filechanged(string path)
+        /* Eventos de identificacion de comentarios */
+        private void obsPathFeedBack_Changed(object sender, FileSystemEventArgs e)
         {
-            if (!utils.FileIsEmpty(path))
-            {
-                var file = new FileInfo(path);
-                var domainfile = _ticketsrvcore.TicketRepoCore.FindTicketFile(file.Name);
-                if (domainfile != null && (file.Length != domainfile.Length))
-                {
-                    // utils.IsFileReady(e.FullPath);
+            this._logger.Info("Service", $"Comment file changed, name: {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
 
-                    domainfile.Status = (int)(utils.IsFileReady(path) ? FileStatus.Available : FileStatus.Busy);
-                    domainfile.Length = file.Length;
-                    domainfile.FullPath = file.FullName;
-                    domainfile.DateNextAttempt = DateTime.Now;
+            this._feedbackSrvCore.UpdateFileCommentCache(e.FullPath);
+        }
 
-                    var result = _ticketsrvcore.TicketRepoCore.ModifyTicketFile(domainfile);
+        private void obsPathFeedBack_Created(object sender, FileSystemEventArgs e)
+        {
+            this._logger.Info("Service", $"Comment file created, name: {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
 
-                    if (result == CacheStatus.Create) this._logger.Info("Service", $"file changed : {file.Name} size: {file.Length} bytes.", 100);
+            this._feedbackSrvCore.RegisterFileFeedBacktoCache(e.FullPath);
+        }
 
-                }
-            }
+        private void obsPathFeedBack_Deleted(object sender, FileSystemEventArgs e)
+        {
 
         }
+
+        private void obsPathFeedBack_Renamed(object sender, RenamedEventArgs e)
+        {
+
+        }
+
 
 
         private void eventLog1_EntryWritten(object sender, EntryWrittenEventArgs e)
         {
 
         }
-
 
     }
 }

@@ -14,6 +14,8 @@ namespace RikersProxy
     {
         public string BaseUrl { get; set; }
         public string Credentials { get; set; }
+        public string ClientId { get; set; }
+        public string ClientSecret { get; set; }
         public X509CertificateCollection x509CertificateCollection { get; set; }
 
         private RestClient _client = new RestClient();
@@ -27,10 +29,35 @@ namespace RikersProxy
         {
             BaseUrl = url;
             Credentials = credentials;
+
         }
 
+        public ClientApi(string url, string credentials, string clientid, string clientsecret)
+        {
+            BaseUrl = url;
+            Credentials = credentials;
+            ClientId = clientid;
+            ClientSecret = clientsecret;
+        }
 
-        public IRestResponse ObtainToken()
+        public IRestResponse GetAccessTokenbyClientSecret()
+        {
+            _client.BaseUrl = BaseUrl;
+            _client.Timeout = -1;
+
+            if (this.x509CertificateCollection != null) _client.ClientCertificates = x509CertificateCollection;
+
+            var request = new RestRequest(Method.POST);
+
+            request.AddParameter("grant_type", "client_credentials");
+            if (!String.IsNullOrEmpty(this.ClientId)) request.AddHeader("client_id", $"Basic {ClientId}");
+            if (!String.IsNullOrEmpty(this.ClientSecret)) request.AddHeader("client_id", $"Basic {ClientSecret}");
+
+            IRestResponse response = _client.Execute(request);
+            return response;
+        }
+
+        public IRestResponse GetAccessToken()
         {
             _client.BaseUrl = BaseUrl;
             _client.Timeout = -1;
@@ -39,7 +66,7 @@ namespace RikersProxy
 
             var request = new RestRequest(Method.GET);
          
-            if (this.Credentials != null) request.AddHeader("Authorization", $"Basic {Credentials}");
+            if (!String.IsNullOrEmpty(this.Credentials)) request.AddHeader("Authorization", $"Basic {Credentials}");
 
             IRestResponse response = _client.Execute(request);
             return response;

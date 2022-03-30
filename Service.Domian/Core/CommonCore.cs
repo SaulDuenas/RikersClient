@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Service.Domian.Core
 {
+
     public enum CacheStatus
     {
         Found = 200,
@@ -28,10 +29,17 @@ namespace Service.Domian.Core
     }
 
 
-    class CommonCore
+    static public class CommonCore
     {
+       static public byte FILE_RESPONSE_NO_CREATE = 0;
+       static public byte FILE_RESPONSE_CREATE = 1;
 
+        static public byte FILE_NOT_EXIST = 2;
+        static public byte FILE_NOT_MOVE = 0;
+       static public byte FILE_MOVE = 1;
 
+       static public byte FILE_PROCESSED = 1;
+       static public byte FILE_NOT_PROCESSED = 0;
 
     }
 }

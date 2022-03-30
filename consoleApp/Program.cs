@@ -24,11 +24,11 @@ namespace consoleApp
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            //  Application.Run(new Form1());
+            Application.Run(new Form1());
 
             // Dependencie Injection
-            var container = Bootstrap();
-            Application.Run(container.GetInstance<Form1>());
+         //   var container = Bootstrap();
+         //   Application.Run(container.GetInstance<Form1>());
             
         }
 

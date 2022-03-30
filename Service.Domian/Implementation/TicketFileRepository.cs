@@ -77,31 +77,32 @@ namespace Service.Domian.Implementation
               var config = new MapperConfiguration(cfg => { cfg.CreateMap<TicketFileDomain, TicketFile>(); });
               IMapper iMapper = config.CreateMapper();
         
-            var ticketfile = _context.TicketFile.First(p => p.FileName == entity.FileName);
+            var destiny = _context.TicketFile.First(p => p.FileName == entity.FileName);
 
            // ticketfile = iMapper.Map<TicketFileDomain, TicketFile>(entity);
 
             
-            if (ticketfile != null)
+            if (destiny != null)
             {
                 // var destination = iMapper.Map<TicketFileDomain, TicketFile>(entity);
-                ticketfile.FullPath = entity.FullPath;
-                ticketfile.DateCreate = entity.DateCreate;
-                ticketfile.DateModified = entity.DateModified;
-                ticketfile.Length = entity.Length;
-                ticketfile.Status = entity.Status;
-                ticketfile.NoTicket = entity.NoTicket;
-                ticketfile.Attempts = entity.Attempts;
-                ticketfile.Response = entity.Response;
-                ticketfile.CaseNumber = entity.CaseNumber;
-                ticketfile.TransactionId = entity.TransactionId;
-                ticketfile.TransactionDate = entity.TransactionDate;
-                ticketfile.DateResponse = entity.DateResponse;
-                ticketfile.FileResponseCreated = entity.FileResponseCreated;
-                ticketfile.FullPathResponse = entity.FullPathResponse;
-                ticketfile.DateNextAttempt = entity.DateNextAttempt;
-                ticketfile.Message = entity.Message;
-                ticketfile.Processed = entity.Processed;
+                destiny.FullPath = entity.FullPath;
+                destiny.DateCreate = entity.DateCreate;
+                destiny.DateModified = entity.DateModified;
+                destiny.Length = entity.Length;
+                destiny.Status = entity.Status;
+                destiny.NoTicket = entity.NoTicket;
+                destiny.Attempts = entity.Attempts;
+                destiny.Response = entity.Response;
+                destiny.CaseNumber = entity.CaseNumber;
+                destiny.TransactionId = entity.TransactionId;
+                destiny.TransactionDate = entity.TransactionDate;
+                destiny.DateResponse = entity.DateResponse;
+                destiny.FileResponseCreated = entity.FileResponseCreated;
+                destiny.FullPathResponse = entity.FullPathResponse;
+                destiny.DateNextAttempt = entity.DateNextAttempt;
+                destiny.Message = entity.Message;
+                destiny.Processed = entity.Processed;
+                destiny.FileMove = entity.FileMove;
 
             }
 

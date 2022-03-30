@@ -11,17 +11,17 @@ using System.Text;
 using System.Threading.Tasks;
 using static RikersProxy.ClientProxy;
 
-namespace Service.Domian.Core
+namespace Service.Domian.Core.Proxy
 {
     public class ProxyCore
     {
         public string CompanyName { get; set; }
         public string IbmCustomerNumber { get; set; }
 
-        private Logger _logger = null;
+        private ILogger _logger = null;
         private  IClientProxy _client;
 
-        public ProxyCore(IClientProxy clientproxy, Logger logger ) 
+        public ProxyCore(IClientProxy clientproxy, ILogger logger ) 
         {
             _client = clientproxy;
             _logger = logger;
@@ -42,7 +42,7 @@ namespace Service.Domian.Core
             if (TokenExpired())
             {
                 _logger.Info("CREATE TOKEN", "token expired, requesting for token", 100);
-                var result = _client.TokenRequest();
+                var result = _client.GetAccessToken();
 
                 result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
 
@@ -113,6 +113,16 @@ namespace Service.Domian.Core
 
             return casedata;
         }
+
+
+        public CommentData getCommentData(string caseNumber, string body)
+        {
+
+            var commentdata = new CommentData() { CaseNumber = caseNumber, Body = body };
+
+            return commentdata;
+        }
+
 
     }
 }

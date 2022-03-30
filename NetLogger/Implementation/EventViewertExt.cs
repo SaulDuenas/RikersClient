@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Monitor.Directory
 {
-    public class EventViewertExt : LoggerBase, ILogger
+    public class EventViewertExt : LoggerBase, ILoggerBase
     {
 
         public EventViewertExt() {

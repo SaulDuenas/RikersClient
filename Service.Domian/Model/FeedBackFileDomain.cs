@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Service.Domian.Model
 {
-   public class CommentFileDomain
+   public class FeedBackFileDomain
     {
         public string FileName { get; set; }
         public string FullPath { get; set; }
@@ -23,6 +23,10 @@ namespace Service.Domian.Model
         public Nullable<System.DateTime> DateResponse { get; set; }
         public Nullable<byte> FileResponseCreated { get; set; }
         public string FullPathResponse { get; set; }
+        public Nullable<System.DateTime> DateNextAttempt { get; set; }
+        public Nullable<byte> FileMove { get; set; }
+        public string Message { get; set; }
+        public Nullable<byte> Processed { get; set; }
 
     }
 }

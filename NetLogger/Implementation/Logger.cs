@@ -8,15 +8,13 @@ using System.Threading.Tasks;
 
 namespace NetLogger.Implementation
 {
-    public class Logger
+    public class Logger : ILogger
     {
         public List<LoggerBase> LogAppender { get; set; }
-
 
         public Logger()
         {
             LogAppender = new List<LoggerBase>();
-
         }
 
         public void Info(string source, string message, int eventID)
@@ -24,7 +22,6 @@ namespace NetLogger.Implementation
             if (LogAppender != null)
             {
                 LogAppender.ForEach(item => item.WriteLog(source, EventLogEntryType.Information, message, eventID));
-
             }
         }
 
@@ -64,7 +61,8 @@ namespace NetLogger.Implementation
 
         public void WriteLog(string source, EventLogEntryType type, string message, int eventID)
         {
-            if (LogAppender != null) {
+            if (LogAppender != null)
+            {
                 LogAppender.ForEach(item => item.WriteLog(source, type, message, eventID));
             }
         }

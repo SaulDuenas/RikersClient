@@ -10,14 +10,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Service.Domian.Core
+namespace Service.Domian.Core.Repo
 {
     public class AttemptTicketRepositoryCore
     {
 
-        private Logger _logger = null;
+        private ILogger _logger = null;
 
-        public AttemptTicketRepositoryCore(Logger logger)
+        public AttemptTicketRepositoryCore(ILogger logger)
         {
 
             _logger = logger;

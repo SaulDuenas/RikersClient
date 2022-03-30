@@ -21,7 +21,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static Service.Domian.Core.TicketRepositoryCore;
+
 
 namespace consoleApp
 {
@@ -30,24 +30,23 @@ namespace consoleApp
         private int start_counter = 0;
 
         private string _exePath;
-      //  private EventViewertExt _eventExt = null;
-        private IClientProxy _proxyCli = null;
         
-        private Logger _logger = null;
+        private ILogger _logger = null;
 
         private Winlogger _locallog = null;
         private FileLogger _filelog = null;
 
-        private ProxyCore _proxyCore = null;
+       // private ProxyCore _proxyCore = null;
         private TicketServiceCore _ticketsrvcore = null;
+        private FeedBackServiceCore _feedbacksrvcore = null;
 
-        public Form1(IClientProxy clientProxy, Winlogger locallog, FileLogger filelog, Logger logger)
+        public Form1()
         {
             InitializeComponent();
             InitializeWindowForm();
 
           //  this._proxyCli = clientProxy;
-            this._locallog = locallog; //  new Locallogger(listBox1);
+            this._locallog = new Winlogger(); //  new Locallogger(listBox1);
          //   this._filelog = filelog;
          //   this._logger = logger;
 
@@ -74,7 +73,7 @@ namespace consoleApp
 
         private void btnstart_Click(object sender, EventArgs e)
         {
-            this._proxyCli = new ClientProxy();
+          //  this._proxyCli = new ClientProxy();
             this._filelog = new FileLogger();
             this._logger = new Logger();
 
@@ -88,15 +87,15 @@ namespace consoleApp
 
         private void btnStop_Click(object sender, EventArgs e)
         {
-         
-            if (StopMonitoring())
+            
+            if (StopTicketsMonitoring() && StopFeedBackMonitoring())
             {
                 btnstart.Enabled = true;
                 btnStop.Enabled = false;
                 button1.Enabled = false;
             }
 
-            this._proxyCli = null;
+
             this._filelog = null;
             this._logger = null;
 
@@ -104,6 +103,8 @@ namespace consoleApp
 
         private bool startMonitoring() 
         {
+            bool retval= false;
+
             _locallog.ListBoxRef = listBox1;
 
             this._logger.LogAppender.Add(_locallog);
@@ -111,74 +112,41 @@ namespace consoleApp
 
             start_counter++;
 
-            this._proxyCore = new ProxyCore(this._proxyCli, this._logger);
+            this._ticketsrvcore = new TicketServiceCore(this._logger);
+            retval = this._ticketsrvcore.run();   // ticketService
 
-            /*
-
-
-            if (!(String.IsNullOrEmpty(ConfigurationManager.AppSettings["BaseUrl"]) && String.IsNullOrEmpty(ConfigurationManager.AppSettings["credential"])))
+            if (retval)
             {
-                retval = true;
-
-               // this._proxyCli.BaseUrl = ConfigurationManager.AppSettings["BaseUrl"];
-               // this._proxyCli.Credentials = ConfigurationManager.AppSettings["credential"];
-               // this._proxyCli.EndPointCreateCase = ConfigurationManager.AppSettings["CreateCase"];
-              //  this._proxyCli.EndPointGetToken = ConfigurationManager.AppSettings["EndPointAccessToken"];
-
-                this._proxyCore = new ProxyCore(this._proxyCli, this._logger);
-
-               // this._client.SerialCert = ConfigurationManager.AppSettings["SerialCert"];
-            }
-            else {
-
-                this._logger.Error("UITesting", $" BaseUrl and/or credential initialize parameters not found", 100);
-
-                return false;
+                obsTickets.Path = ConfigurationManager.AppSettings["PathTicketsPending"]; 
+                obsTickets.Filter = ConfigurationManager.AppSettings["Filter"];
+                obsTickets.EnableRaisingEvents = true;
             }
 
-            */
+            this._feedbacksrvcore = new FeedBackServiceCore(this._logger);
+            retval=this._feedbacksrvcore.run();   // FeedBackService
 
-            string path_observer = ConfigurationManager.AppSettings["PathTicketsPending"];
-
-            if (!string.IsNullOrEmpty(path_observer) && Directory.Exists(path_observer))
+            if (retval)
             {
-                observer.Path = path_observer;
-                observer.Filter = ConfigurationManager.AppSettings["Filter"];
-                observer.EnableRaisingEvents = true;
-
-                this._ticketsrvcore = new TicketServiceCore(this._logger, this._proxyCore);
-
-                this._ticketsrvcore.update_file_cache();
-
-                this._ticketsrvcore.run();
-                //  this._servicecore.CheckAvailableChacheFiles();
-
-                this._logger.Info("Service", $"start monitoring - sprint {start_counter}", 100);
-
-                return true;
-            }
-            else 
-            {
-                if (string.IsNullOrEmpty(path_observer)) this._logger.Error("Service", $"Parameter PathTicketsPending is Empty or not exist, check the parameter PathTicketsPending on App.Config.", 100);
-                if (!Directory.Exists(path_observer)) this._logger.Error("Service", $"Path {path_observer} not exist", 100);
-
-                return false;
+                obsFeedBack.Path = ConfigurationManager.AppSettings["PathCommentsPending"]; ;
+                obsFeedBack.Filter = ConfigurationManager.AppSettings["Filter"];
+                obsFeedBack.EnableRaisingEvents = true;
             }
 
-           //return retval;
+            if(retval) this._logger.Info("UITesting", $"star monitoring - sprint {start_counter}", 100);
+
+            return retval;
         }
 
-        private bool StopMonitoring() 
+        private bool StopTicketsMonitoring() 
         {
             this._ticketsrvcore.stop();
-            if (observer.EnableRaisingEvents) {
+            
+            if (obsTickets.EnableRaisingEvents)
+            {
 
-               // this._repositoryCore = null;
-               // this._proxyCore = null;
+                obsTickets.EnableRaisingEvents = false;
 
-                observer.EnableRaisingEvents = false;
-
-                this._logger.Info("Service", $"stop monitoring - sprint {start_counter}", 100);
+                this._logger.Info("UITesting", $"stop tickets monitoring - sprint {start_counter}", 100);
 
                 return true;
             }
@@ -187,20 +155,30 @@ namespace consoleApp
             
         }
 
+        private bool StopFeedBackMonitoring()
+        {
+            this._feedbacksrvcore.stop();
+
+            if (obsFeedBack.EnableRaisingEvents)
+            {
+
+                obsFeedBack.EnableRaisingEvents = false;
+
+                this._logger.Info("UITesting", $"stop feedback monitoring - sprint {start_counter}", 100);
+
+                return true;
+            }
+
+            return false;
+
+        }
+
         private async void  button1_Click(object sender, EventArgs e)
         {
 
             button1.Enabled = false;
 
-            if (TokenisOk())
-            {
-                var casedata = getCaseData("Subject de creación de Caso", "REPORTING DEVICE", "MX", txtProblemNumber.Text);
-
-                var result = _proxyCli.CreateCase( casedata);
-                // write log
-                result.Messages.ToList().ForEach(item => this._logger.WriteLog(item.Category, item.Type, $"Request Code: {item.Code} - Message: {item.Reason}", 100) );
-             
-            }
+            this._logger.Info("UITesting", $"click en boton ", 100);
 
             button1.Enabled = true;
             //generateToken();
@@ -212,100 +190,73 @@ namespace consoleApp
 
         /*
          
-              Eventos de identificacion de archivos
-         
+              Eventos de identificacion de archivos de tickets
          
          */
 
-        private void observer_Created(object sender, FileSystemEventArgs e)
+        private void obsTickets_Created(object sender, FileSystemEventArgs e)
         {
-            this._logger.Info("UITesting", $"file created, name: {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
+            this._logger.Info("UITesting", $"Ticket file created, name: {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
 
             this._ticketsrvcore.RegisterFileTickettoCache(e.FullPath);
 
         }
 
-        private void observer_Changed(object sender, FileSystemEventArgs e)
+        private void obsTickets_Changed(object sender, FileSystemEventArgs e)
         {
             var result = this._ticketsrvcore.UpdateFileTicketCache(e.FullPath);
 
-            if (result) this._logger.Info("UITesting", $"file changed : {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
-
+            if (result) this._logger.Info("UITesting", $"Ticket file changed : {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
 
         }
 
-
-
-        private void observer_Deleted(object sender, FileSystemEventArgs e)
+        private void obsTickets_Deleted(object sender, FileSystemEventArgs e)
         {
 
         }
 
-        private void observer_Renamed(object sender, RenamedEventArgs e)
+        private void obsTickets_Renamed(object sender, RenamedEventArgs e)
         {
 
         }
 
+        /*
 
+            Eventos de identificacion de archivos de comentarios
 
-        public bool TokenisOk() 
+       */
+
+        private void obsComments_Changed(object sender, FileSystemEventArgs e)
         {
+            this._logger.Info("UITesting", $"Comment file changed, name: {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
 
-            bool tokenOk = true;
+            this._feedbacksrvcore.UpdateFileCommentCache(e.FullPath);
+        }
 
-            if (!(_proxyCli.Elapsed_Time_Token.Equals(null)) && _proxyCli.Elapsed_Time_Token.TotalSeconds <= 0)
-            {
-                this._logger.Info("UITesting","token expired, requesting ner token",100);
+        private void obsComments_Created(object sender, FileSystemEventArgs e)
+        {
+            this._logger.Info("UITesting", $"Comment file created, name: {e.Name} size: {new FileInfo(e.FullPath).Length} bytes.", 100);
 
-                var result = _proxyCli.TokenRequest();
-                
-                if (result.Code.Equals(HttpStatusCode.OK))
-                {
-                    result.Messages.ToList().ForEach(item => this._logger.WriteLog(item.Category, item.Type, $"Request Code: {item.Code} - Message: {item.Reason}", 100));
-                   
-                    this._logger.WriteLog("CREATE TOKEN","SuccessAudit", $"Request Code: {(int)result.Code} - {result.Message} - AccessToken: {_proxyCli.Token.AccessToken} - ExpiresIn: {_proxyCli.Token.ExpiresIn}", 100);
-                 
-                    tokenOk = true;
-                }
-                else
-                {
-                    result.Messages.ToList().ForEach(item => this._logger.WriteLog(item.Category, item.Type, $"Request Code: {item.Code} - Message: {item.Reason}", 100));
-                  
-                    tokenOk = false;
-                  //  _logger.Error("UITesting", $"Request Code: {(int)result.Code} - Message: {result.Message}", 100);
-                }
+            this._feedbacksrvcore.RegisterFileFeedBacktoCache(e.FullPath);
+        }
 
-            }
 
-            return tokenOk;
+        private void obsComments_Deleted(object sender, FileSystemEventArgs e)
+        {
 
         }
 
-        static public CaseData getCaseData(string subject, string description,string country,string customerproblemnumber  )
+        private void obsComments_Renamed(object sender, RenamedEventArgs e)
         {
 
-            var casedata = new CaseData();
-
-            casedata.Subject = subject;
-            casedata.Description = description;
-            casedata.Country = country;
-            casedata.CustomerProblemNumber = customerproblemnumber;
-
-            casedata.Customer = new Customer(){ CompanyName = ConfigurationManager.AppSettings["CompanyName"], 
-                                                IbmCustomerNumber = ConfigurationManager.AppSettings["IbmCustomerNumber"]
-            };
-
-            casedata.CaseContact = new CaseContact() { GivenName="Donald", FamilyName="Duck", Phone="+555555", Email="donald@duck.false" };
-
-            casedata.Asset = new Asset() { IbmMachineType="MF32", IbmMachineModel="000", Serial="MX46709" };
-
-            return casedata;
         }
+
 
         private void ListBox_DoubleClick(object sender, EventArgs e) 
         {
             Clipboard.SetText(listBox1.SelectedItem.ToString());
         }
+
 
     }
 

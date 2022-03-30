@@ -43,10 +43,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Base\ILogger.cs" />
+    <Compile Include="Base\ILoggerBase.cs" />
     <Compile Include="Base\LoggerBase.cs" />
     <Compile Include="Implementation\EventViewertExt.cs" />
     <Compile Include="Implementation\FileLogger.cs" />
+    <Compile Include="Implementation\ILogger.cs" />
     <Compile Include="Implementation\Winlogger.cs" />
     <Compile Include="Implementation\Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 namespace NetLogger.Implementation
 {
-    public class Winlogger: LoggerBase, ILogger
+    public class Winlogger: LoggerBase, ILoggerBase
     {
 
         public ListBox ListBoxRef { get; set; }

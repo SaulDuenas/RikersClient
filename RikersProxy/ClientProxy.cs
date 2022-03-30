@@ -16,13 +16,15 @@ namespace RikersProxy
     public class ClientProxy : IClientProxy
     {
 
+        private readonly static IClientProxy _in = new ClientProxy();
+
         public string BaseUrl { get; set; }
         public string Credentials { get; set; }
         public bool UseSSL { get; set; }
         public string SerialCert { get; set; }
         public string EndPointGetToken { get; set; }
         public string EndPointCreateCase { get; set; }
-        public string EndPointSendComment { get; set; }
+        public string EndPointFeedBack { get; set; }
 
         public Token Token { get; set; }
 
@@ -34,9 +36,19 @@ namespace RikersProxy
             }
         }
 
+
+        public static IClientProxy Instance
+        {
+            get {
+
+                return _in;
+            }
+        }
+
+
         private DateTime _token_date_end;
 
-        public ClientProxy()
+        private ClientProxy()
         {
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3
@@ -46,8 +58,9 @@ namespace RikersProxy
 
             this.BaseUrl = ConfigurationManager.AppSettings["BaseUrl"];
             this.Credentials = ConfigurationManager.AppSettings["credential"];
-            this.EndPointCreateCase = ConfigurationManager.AppSettings["CreateCase"];
             this.EndPointGetToken = ConfigurationManager.AppSettings["EndPointAccessToken"];
+            this.EndPointCreateCase = ConfigurationManager.AppSettings["EndPointCreateCase"];
+            this.EndPointFeedBack = ConfigurationManager.AppSettings["EndPointFeedBack"];
 
             this.UseSSL = string.IsNullOrEmpty(ConfigurationManager.AppSettings["UseSSL"]) ? false :
                           (ConfigurationManager.AppSettings["UseSSL"]).Equals("false") ? false:true;
@@ -161,13 +174,18 @@ namespace RikersProxy
         }
 
 
-        public ProxyResult TokenRequest()
+        public ProxyResult GetAccessTokenByClientSecret()
+        {
+            return null; 
+        }
+
+            public ProxyResult GetAccessToken()
         {
             IRestResponse response;
 
             List<Message> MessageLts = new List<Message>();
            
-            if (!(string.IsNullOrEmpty(this.Credentials) && string.IsNullOrEmpty(this.BaseUrl)))
+            if (!(string.IsNullOrEmpty(this.Credentials) && string.IsNullOrEmpty(this.BaseUrl)  && String.IsNullOrEmpty(this.EndPointGetToken) ))
             {
                 using (var client = new ClientApi())
                 {
@@ -175,7 +193,7 @@ namespace RikersProxy
                     {
                         MessageLts = prepareClient(client, this.EndPointGetToken);
 
-                        response = client.ObtainToken();
+                        response = client.GetAccessToken();
 
                         if (response.StatusCode == HttpStatusCode.OK)
                         {
@@ -255,7 +273,7 @@ namespace RikersProxy
                         Code = ((int)HttpStatusCode.NotAcceptable).ToString(),
                         Category = "API TOKEN",
                         Type = "Error",
-                        Reason = "Cannot bind API, credentials not provided, check the parameter credential on App.config "
+                        Reason = "Parameter Credentials is Empty or not exist, check the parameter Credentials on App.Config. "
                     });
                 }
 
@@ -266,7 +284,18 @@ namespace RikersProxy
                         Code = ((int)HttpStatusCode.NotAcceptable).ToString(),
                         Category = "API TOKEN",
                         Type = "Error",
-                        Reason = "Cannot bind API, BaseUrl not provided, check the parameter BaseUrl on App.config "
+                        Reason = "Parameter BaseUrl is Empty or not exist, check the parameter BaseUrl on App.Config"
+                    });
+                }
+
+                if (string.IsNullOrEmpty(this.EndPointGetToken))
+                {
+                    MessageLts.Add(new Message()
+                    {
+                        Code = ((int)HttpStatusCode.NotAcceptable).ToString(),
+                        Category = "API TOKEN",
+                        Type = "Error",
+                        Reason = "Parameter EndPointAccessToken is Empty or not exist, check the parameter EndPointAccessToken on App.Config"
                     });
                 }
 
@@ -276,11 +305,14 @@ namespace RikersProxy
 
         public ProxyResult CreateCase(CaseData data)
         {
+            ProxyResult result = null;
             List<Message> MessageLts = new List<Message>();
             string message = "";
 
-            if (Elapsed_Time_Token.TotalMinutes > 0)
+
+            if (Elapsed_Time_Token.TotalMinutes > 0 && !String.IsNullOrEmpty(this.EndPointCreateCase))
             {
+                
                 IRestResponse response;
 
                 using (var client = new ClientApi())
@@ -299,18 +331,18 @@ namespace RikersProxy
                             
                             MessageLts.Add(new Message { Code = ((int)response.StatusCode).ToString(), Category = "API CREATE CASE", Type = "Information", Reason = msg });
 
-                            return new ProxyResult {  Code = response.StatusCode, Message = msg, Messages = MessageLts, CaseCreate = casecreated };
+                            result = new ProxyResult {  Code = response.StatusCode, Message = msg, Messages = MessageLts, CaseCreate = casecreated };
 
                         }
                         else 
                         {
                             message = !string.IsNullOrEmpty(response.Content) ? response.Content : "";
 
-                            var result = JsonConvert.DeserializeObject<ResponseMessage>(response.Content);
+                            var responseMessage = JsonConvert.DeserializeObject<ResponseMessage>(response.Content);
 
-                            if (result.Messages != null)
+                            if (responseMessage.Messages != null)
                             {
-                                var msg = result.Messages.Select(p => new Message() { Category = "API CREATE CASE", Code = p.Code, Type = p.Type, Reason = p.MessageMessage }).ToList();
+                                var msg = responseMessage.Messages.Select(p => new Message() { Category = "API CREATE CASE", Code = p.Code, Type = p.Type, Reason = p.MessageMessage }).ToList();
                                 MessageLts.AddRange(msg);
                             }
                             else {
@@ -326,7 +358,7 @@ namespace RikersProxy
                                 }
 
                             }
-                            return new ProxyResult { Code = response.StatusCode, Message = $"", Messages = MessageLts, ResponseMessage = result };
+                            result = new ProxyResult { Code = response.StatusCode, Message = $"", Messages = MessageLts, ResponseMessage = responseMessage };
 
                         }
 
@@ -360,35 +392,48 @@ namespace RikersProxy
                             Reason = trace.ToString()
                         });
 
-                        return new ProxyResult { Code = HttpStatusCode.NotImplemented, Message = "Falta Error", Messages = MessageLts };
+                        result = new ProxyResult { Code = HttpStatusCode.NotImplemented, Message = "Falta Error", Messages = MessageLts };
                     }
 
                 }
 
             }
-            else
+            else if (Elapsed_Time_Token.TotalMinutes <= 0)
             {
                 MessageLts.Add(new Message()
                 {
                     Code = ((int)HttpStatusCode.NotAcceptable).ToString(),
-                    Category = "API TOKEN",
+                    Category = "API CREATE CASE",
                     Type = "Warning",
                     Reason = "token expired, get a new token"
                 });
 
-                return new ProxyResult() { Code = HttpStatusCode.NotAcceptable, Message = $"token expired", Messages = MessageLts };
+                result = new ProxyResult() { Code = HttpStatusCode.NotAcceptable, Message = $"token expired", Messages = MessageLts };
+            }
+            else if (String.IsNullOrEmpty(this.EndPointCreateCase))
+            {
+                MessageLts.Add(new Message()
+                {
+                    Code = ((int)HttpStatusCode.NotAcceptable).ToString(),
+                    Category = "API CREATE CASE",
+                    Type = "Error",
+                    Reason = "Parameter EndPointCreateCase is Empty or not exist, check the parameter EndPointCreateCase on App.Config"
+                });
+
+                result = new ProxyResult() { Code = HttpStatusCode.NotAcceptable, Message = $"Parameter EndPointCreateCase is Empty or not exist", Messages = MessageLts };
             }
 
-            //  return null;
+            return result;
         }
 
 
         public ProxyResult SubmitFeedback(CommentData data)
         {
+            ProxyResult result = null;
             List<Message> MessageLts = new List<Message>();
             string message = "";
 
-            if (Elapsed_Time_Token.TotalMinutes > 0)
+            if (Elapsed_Time_Token.TotalMinutes > 0 && !String.IsNullOrEmpty(this.EndPointFeedBack))
             {
                 IRestResponse response;
 
@@ -396,8 +441,8 @@ namespace RikersProxy
                 {
                     try
                     {
-                        this.EndPointSendComment = this.EndPointSendComment.Replace("{casenumber}",data.CaseNumber);
-                        prepareClient(client, this.EndPointSendComment);
+                        this.EndPointFeedBack = this.EndPointFeedBack.Replace("{casenumber}",data.CaseNumber);
+                        prepareClient(client, this.EndPointFeedBack);
 
                         response = client.SubmitFeedback(this.Token.AccessToken, data);
 
@@ -409,18 +454,18 @@ namespace RikersProxy
 
                             MessageLts.Add(new Message { Code = ((int)response.StatusCode).ToString(), Category = "API SUBMIT FEEDBACK", Type = "Information", Reason = msg });
 
-                            return new ProxyResult { Code = response.StatusCode, Message = msg, Messages = MessageLts, FeedBack = FeedBackResponse };
+                            result = new ProxyResult { Code = response.StatusCode, Message = msg, Messages = MessageLts, FeedBack = FeedBackResponse };
 
                         }
                         else
                         {
                             message = !string.IsNullOrEmpty(response.Content) ? response.Content : "";
 
-                            var result = JsonConvert.DeserializeObject<ResponseMessage>(response.Content);
+                            var resultResponse = JsonConvert.DeserializeObject<ResponseMessage>(response.Content);
 
-                            if (result.Messages != null)
+                            if (resultResponse.Messages != null)
                             {
-                                var msg = result.Messages.Select(p => new Message() { Category = "API SUBMIT FEEDBACK", Code = p.Code, Type = p.Type, Reason = p.MessageMessage }).ToList();
+                                var msg = resultResponse.Messages.Select(p => new Message() { Category = "API SUBMIT FEEDBACK", Code = p.Code, Type = p.Type, Reason = p.MessageMessage }).ToList();
                                 MessageLts.AddRange(msg);
                             }
                             else
@@ -438,7 +483,7 @@ namespace RikersProxy
                                 }
 
                             }
-                            return new ProxyResult { Code = response.StatusCode, Message = $"", Messages = MessageLts, ResponseMessage = result };
+                            result = new ProxyResult { Code = response.StatusCode, Message = $"", Messages = MessageLts, ResponseMessage = resultResponse };
 
                         }
 
@@ -472,29 +517,39 @@ namespace RikersProxy
                             Reason = trace.ToString()
                         });
 
-                        return new ProxyResult { Code = HttpStatusCode.NotImplemented, Message = "Falta Error", Messages = MessageLts };
+                        result = new ProxyResult { Code = HttpStatusCode.NotImplemented, Message = "Falta Error", Messages = MessageLts };
                     }
 
                 }
 
             }
-            else
+            else if (Elapsed_Time_Token.TotalMinutes <= 0)
             {
                 MessageLts.Add(new Message()
                 {
                     Code = ((int)HttpStatusCode.NotAcceptable).ToString(),
-                    Category = "API TOKEN",
+                    Category = "API SUBMIT FEEDBACK",
                     Type = "Warning",
                     Reason = "token expired, get a new token"
                 });
 
-                return new ProxyResult() { Code = HttpStatusCode.NotAcceptable, Message = $"token expired", Messages = MessageLts };
+                result = new ProxyResult() { Code = HttpStatusCode.NotAcceptable, Message = $"token expired", Messages = MessageLts };
+            }
+            else if (String.IsNullOrEmpty(this.EndPointFeedBack))
+            {
+                MessageLts.Add(new Message()
+                {
+                    Code = ((int)HttpStatusCode.NotAcceptable).ToString(),
+                    Category = "API CREATE CASE",
+                    Type = "Error",
+                    Reason = "Parameter EndPointCreateCase is Empty or not exist, check the parameter EndPointCreateCase on App.Config"
+                });
+
+                result = new ProxyResult() { Code = HttpStatusCode.NotAcceptable, Message = $"Parameter EndPointCreateCase is Empty or not exist", Messages = MessageLts };
             }
 
-            //  return null;
+            return result;
         }
-
-
 
 
         public class ProxyResult
@@ -506,7 +561,6 @@ namespace RikersProxy
             public ResponseFeedBack FeedBack { get; set; }
             public ResponseMessage ResponseMessage { get; set; }
         }
-
 
         public class Message
         {
