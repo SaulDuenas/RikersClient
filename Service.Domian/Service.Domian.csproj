@@ -60,6 +60,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\Repo\AtmRepositoryCore.cs" />
     <Compile Include="Core\Repo\AttemptTicketRepositoryCore.cs" />
     <Compile Include="Core\Repo\FeedBackRepositoryCore.cs" />
     <Compile Include="Core\CommonCore.cs" />
@@ -72,10 +73,12 @@
     <Compile Include="Dto\CustumerDto.cs" />
     <Compile Include="Dto\CaseDataDto.cs" />
     <Compile Include="Core\FeedBackServiceCore.cs" />
+    <Compile Include="Implementation\AtmCatRepository.cs" />
     <Compile Include="Implementation\CommentFileRepository.cs" />
     <Compile Include="Implementation\StatusFileRepository.cs" />
     <Compile Include="Implementation\AttemptTicketRepository.cs" />
     <Compile Include="Implementation\TicketFileRepository.cs" />
+    <Compile Include="Model\AtmCatDomain.cs" />
     <Compile Include="Model\FeedBackFileDomain.cs" />
     <Compile Include="Model\StatusFileDomain.cs" />
     <Compile Include="Model\AttemptTicketDomain.cs" />
@@ -97,6 +100,10 @@
     <ProjectReference Include="..\RikersProxy\RikersProxy.csproj">
       <Project>{0e5f7b4b-baa4-46b4-b0e2-9e302656be85}</Project>
       <Name>RikersProxy</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Service.AtmCat\Service.AtmCat.csproj">
+      <Project>{4fad2cd7-a75b-4bed-9a6a-92958e6d47db}</Project>
+      <Name>Service.AtmCat</Name>
     </ProjectReference>
     <ProjectReference Include="..\Service.DataAccess\Service.DataAccess.csproj">
       <Project>{60a65aee-f5a3-40b1-a8f8-c6b21e3716c3}</Project>

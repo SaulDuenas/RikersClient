@@ -11,6 +11,8 @@ namespace RikersProxy.Entities
     {
         [JsonProperty("caseNumber")]
         public string CaseNumber { get; set; }
+        [JsonIgnore]
+        public string ExternalProblemNumber { get; set; }
 
         [JsonProperty("body")]
         public string Body { get; set; }

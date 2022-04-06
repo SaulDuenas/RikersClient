@@ -109,16 +109,14 @@ namespace Service.Domian.Core.Proxy
 
             casedata.CaseContact = new CaseContact() { GivenName = "Donald", FamilyName = "Duck", Phone = "+555555", Email = "donald@duck.false" };
 
-            casedata.Asset = new Asset() { IbmMachineType = "MF32", IbmMachineModel = "000", Serial = "MX46709" }; // get wbservice catalog
-
             return casedata;
         }
 
 
-        public CommentData getCommentData(string caseNumber, string body)
+        public CommentData getCommentData(string Nticket,string caseNumber, string body)
         {
 
-            var commentdata = new CommentData() { CaseNumber = caseNumber, Body = body };
+            var commentdata = new CommentData() { CaseNumber = caseNumber, Body = body, ExternalProblemNumber = Nticket };
 
             return commentdata;
         }

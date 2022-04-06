@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Service.Domian.Implementation
 {
-    class AttemptTicketRepository : IRepository<AttemptTicketDomain, StatusFileDomain>, IDisposable
+    public class AttemptTicketRepository : IRepository<AttemptTicketDomain, StatusFileDomain>, IDisposable
     {
 
         private DataServiceEntities _context = null;

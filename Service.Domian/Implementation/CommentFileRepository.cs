@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Service.Domian.Implementation
 {
-    class CommentFileRepository : IRepository<FeedBackFileDomain, StatusFileDomain>, IDisposable
+    public class CommentFileRepository : IRepository<FeedBackFileDomain, StatusFileDomain>, IDisposable
     {
 
         private DataServiceEntities _context = null;

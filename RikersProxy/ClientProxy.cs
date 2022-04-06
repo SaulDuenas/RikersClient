@@ -441,8 +441,8 @@ namespace RikersProxy
                 {
                     try
                     {
-                        this.EndPointFeedBack = this.EndPointFeedBack.Replace("{casenumber}",data.CaseNumber);
-                        prepareClient(client, this.EndPointFeedBack);
+                        var endpoint = this.EndPointFeedBack.Replace("{casenumber}",data.CaseNumber);
+                        prepareClient(client, endpoint);
 
                         response = client.SubmitFeedback(this.Token.AccessToken, data);
 

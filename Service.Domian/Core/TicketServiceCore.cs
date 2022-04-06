@@ -15,8 +15,8 @@ using RikersProxy;
 using Service.Domian.Core.Repo;
 using Service.Domian.Core.Proxy;
 using RikersProxy.Entities;
+using RikersProxy.Entities.General;
 using static RikersProxy.ClientProxy;
-using System.Resources;
 
 namespace Service.Domian.Core
 {
@@ -31,7 +31,9 @@ namespace Service.Domian.Core
             public string QuarantinePath { get; set; }
             public string DispatchedPath { get; set; }
             public string ResponsePath { get; set; }
-            public TicketRepositoryCore TicketRepoCore { get => _ticketrepoCore; set => _ticketrepoCore = value; }
+            public TicketRepositoryCore TicketRepoCore { get; set; }
+            public AtmRepositoryCore AtmRepoCore { get; set; }
+            public AttemptTicketRepositoryCore AttemptTicketRepoCore { get; set; }
 
             Thread ThRequestTickets = null;
 
@@ -39,10 +41,11 @@ namespace Service.Domian.Core
             private bool EndTask = false;
 
             public string NticketField = "NoTicket";
+            public string AtmSerialIdField = "AtmSerialId";
 
             private ProxyCore _proxyCore = null;
-            private TicketRepositoryCore _ticketrepoCore = null;
-            private AttemptTicketRepositoryCore _attemptticketrepoCore = null;
+      
+           
             private ILogger _logger = null;
 
             public TicketServiceCore(ILogger logger)
@@ -56,9 +59,10 @@ namespace Service.Domian.Core
                 IClientProxy proxyCli = ClientProxy.Instance;
                 
                 this._proxyCore = new ProxyCore(proxyCli, this._logger);
-                
+
+                this.AtmRepoCore = new AtmRepositoryCore(this._logger);
                 this.TicketRepoCore = new TicketRepositoryCore(this._logger);
-                this._attemptticketrepoCore = new AttemptTicketRepositoryCore(this._logger);
+                this.AttemptTicketRepoCore = new AttemptTicketRepositoryCore(this._logger);
 
                 this.PendingPath = ConfigurationManager.AppSettings["PathTicketsPending"];
                 this.DispatchedPath = ConfigurationManager.AppSettings["PathTicketsDispatched"];
@@ -259,22 +263,23 @@ namespace Service.Domian.Core
                       //  if (!file_ready) this._logger.Warning("ProccesPendingTickets", $"the file {ticketfile.FileName} not cannot be read,try in 5 minutes", 100);
 
                         var tokenOk = file_ready ? _proxyCore.TokenisAvailable() : false;
-
+                        var casedata = tokenOk ? ParseCaseData(ticketfile.FullPath) : null;  // Create Case Data 
                         // validation ok ?
-                        if (file_ready && tokenOk)
+                        if (file_ready && tokenOk && casedata !=null)
                         {
-                            var casedata = ParseCaseData(ticketfile.FullPath);  // Create Case Data 
+                           
                             var result = _proxyCore.CreateCase(casedata); // Send casedata to Rikers API
                             result.Messages.ToList().ForEach(item => this._logger.WriteLog(item.Category, item.Type, $"Request Code: {item.Code} - Message: {item.Reason}", 100));  // write result on log 
                             UpdateFileTicketCache(casedata.CustomerProblemNumber, ticketfile, result); // update result on cache
                         }
                       
-                        else if (!file_ready || !tokenOk)
+                        else if (!file_ready || !tokenOk || casedata == null)
                         {
                             string message = "";
                             HttpStatusCode code = System.Net.HttpStatusCode.Conflict;
                             message = !file_ready ? $"the file {ticketfile.FileName} not cannot be read,try read in {SecondsWait} seconds" : 
-                                      (file_ready && !tokenOk) ? $"token not available,try obtain in { SecondsWait} seconds":"";
+                                      (file_ready && !tokenOk) ? $"token not available,try obtain in { SecondsWait} seconds":
+                                      (file_ready && tokenOk && casedata == null) ? "" : "";
                             
                             this._logger.Warning("ProccesPendingTickets", message, 100);  // notify 
                             
@@ -439,7 +444,7 @@ namespace Service.Domian.Core
                 var resultrepo = TicketRepoCore.ModifyTicketFile(ticketfile);
 
                 // Reg Attempt 
-                result.Messages.ForEach(item => this._attemptticketrepoCore.RegisterTicketAttempt(new AttemptTicketDomain()
+                result.Messages.ForEach(item => this.AttemptTicketRepoCore.RegisterTicketAttempt(new AttemptTicketDomain()
                 {
                     NoTicket = CustomerProblemNumber,
                     NAttempt = attempts,
@@ -535,18 +540,29 @@ namespace Service.Domian.Core
             {
                 var source = utils.GetFileContentbyKeyPair(filePath);
                 var NTicket = source[NticketField];
+                var AtmSerialId = source[AtmSerialIdField];
 
-                // Create Case Data 
-                CaseData retval = _proxyCore.getCaseData("Subject de creación de Caso", "REPORTING DEVICE", "MX", NTicket);
+                var atm = AtmRepoCore.GetAtm(AtmSerialId);
 
-                return retval;
+                if (atm != null) 
+                {
+                    // Create Case Data 
+                    CaseData casedata = _proxyCore.getCaseData("Subject de creación de Caso", "REPORTING DEVICE", "MX", NTicket);
+                    casedata.Asset = new Asset() { IbmMachineType = atm.IbmMachineType, IbmMachineModel = atm.IbmMachineModel, Serial = atm.SerialNumber }; // get wbservice catalog
+                    return casedata;
+                }
+                else 
+                {
+                    return null;
+                }
+
             }
 
             public void Dispose()
             {
                 ThRequestTickets = null;
-                _ticketrepoCore = null;
-                _attemptticketrepoCore = null;
+                TicketRepoCore = null;
+                AttemptTicketRepoCore = null;
         }
         }
 

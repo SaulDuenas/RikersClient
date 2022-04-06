@@ -11,18 +11,11 @@ namespace Service.Domian.Repository
     {
         int Create(T entity);
         int Modify(T entity);
-
         int Delete(T entity);
-
         List<T> ReadAll();
-
         List<T> ReadAll(E entity);
-
         List<T> ReadAll(string id);
-
         T Find(string id);
-
         T Find(int id);
-
     }
 }

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Service.Domian.Implementation
 {
-    class StatusFileRepository : IRepository<StatusFileDomain, StatusFileDomain>, IDisposable
+    public class StatusFileRepository : IRepository<StatusFileDomain, StatusFileDomain>, IDisposable
     {
         private DataServiceEntities _context = null;
 

@@ -34,9 +34,9 @@ namespace Service.Domian.Core
         private bool isRun = false;
         private bool EndTask = false;
 
-        public string NticketField = "NoTicket";
-        public string CaseNumberField = "CaseNumber";
-        public string BodyField = "Body";
+        public string NTICKETFIELD = "NoTicket";
+        public string CASENUMBERFIELD = "CaseNumber";
+        public string BODYFIELD = "Body";
 
         private ProxyCore _proxyCore = null;
         private FeedBackRepositoryCore _FeedBackRepoCore = null;
@@ -205,7 +205,7 @@ namespace Service.Domian.Core
                         var result = _proxyCore.SubmitFeedback(commentdata); // Send commentdata to Rikers API
                         result.Messages.ToList().ForEach(item => this._logger.WriteLog(item.Category, item.Type, $"Request Code: {item.Code} - Message: {item.Reason}", 100));  // write result on log 
 
-                        UpdateFileCommentCache(commentdata.CaseNumber, commentfile, result); // update result on cache
+                        UpdateFileCommentCache(commentdata.ExternalProblemNumber,commentdata.CaseNumber, commentfile, result); // update result on cache
 
                     }
 
@@ -223,7 +223,7 @@ namespace Service.Domian.Core
                         result.Messages = new List<RikersProxy.ClientProxy.Message>();
                         result.Messages.Add(new RikersProxy.ClientProxy.Message { Code = code.ToString(), Type = "information", Category = "ProccesPendingFeedBacks", Reason = message });
 
-                        UpdateFileCommentCache(commentfile.NoTicket, commentfile, result, false, message);  // update result on cache
+                        UpdateFileCommentCache("", "", commentfile, result); // update result on cache
 
                     }
 
@@ -243,7 +243,7 @@ namespace Service.Domian.Core
         }
 
 
-        private void UpdateFileCommentCache(string CustomerProblemNumber, FeedBackFileDomain commentfile, ProxyResult result, bool addattempt = true, string message = "")
+        private void UpdateFileCommentCache(string ProblemNumber,string CaseNumber, FeedBackFileDomain commentfile, ProxyResult result, bool addattempt = true, string message = "")
         {
             byte? filemove = CommonCore.FILE_NOT_MOVE;
 
@@ -276,9 +276,9 @@ namespace Service.Domian.Core
             }
 
             commentfile.Status = (int)statusfile;
-            commentfile.NoTicket = CustomerProblemNumber;
+            commentfile.NoTicket = ProblemNumber;
             commentfile.Response = (int)result.Code;
-            commentfile.CaseNumber = result.CaseCreate != null ? result.CaseCreate.CaseNumber : "";
+            commentfile.CaseNumber = CaseNumber;
             commentfile.TransactionId = TransactionId;
             commentfile.TransactionDate = TransactionDate;
             commentfile.Attempts = attempts;
@@ -319,12 +319,13 @@ namespace Service.Domian.Core
         private CommentData ParseFeedBackData(string filePath)
         {
             var source = utils.GetFileContentbyKeyPair(filePath);
-            var CaseNumber = source[CaseNumberField];
-            var Body = source[BodyField];
+            var CaseNumber = source[CASENUMBERFIELD];
+            var Body = source[BODYFIELD];
+            var Nticket = source[NTICKETFIELD];
 
             // Create Case Data 
-            CommentData retval = _proxyCore.getCommentData(CaseNumber, Body);
-
+            CommentData retval = _proxyCore.getCommentData(Nticket,CaseNumber, Body);
+            
             return retval;
         }
 
