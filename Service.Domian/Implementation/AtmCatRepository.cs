@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Service.AtmCat;
+using Service.DataAtm;
 using Service.Domian.Model;
 using Service.Domian.Repository;
 using System;
@@ -13,11 +13,11 @@ namespace Service.Domian.Implementation
     public class AtmCatRepository : IRepository<AtmCatDomain, StatusFileDomain>, IDisposable
     {
 
-        private AtmCatEntities _context = null;
+        private AtmDataEntities _context = null;
 
         public AtmCatRepository()
         {
-            _context = new AtmCatEntities();
+            _context = new AtmDataEntities();
         }
 
       

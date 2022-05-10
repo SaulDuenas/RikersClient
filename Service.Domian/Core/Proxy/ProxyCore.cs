@@ -44,24 +44,32 @@ namespace Service.Domian.Core.Proxy
                 _logger.Info("CREATE TOKEN", "token expired, requesting for token", 100);
                 var result = _client.GetAccessToken();
 
-                result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
+                foreach (ClientProxy.Message msg in result.Messages) {
+                    string message = string.IsNullOrEmpty(msg.Code) ? "" : $"Request Code: {msg.Code} -";
+                    message = message + $"Message: {msg.Reason}";
+
+                    _logger.WriteLog(msg.Category, msg.Type, message, 100);
+                }
+
+                // result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, string.IsNullOrEmpty(r.Code)?"": $"Request Code: {r.Code} -" + $"Message: {r.Reason}", 100));
 
                 if (result.Code.Equals(HttpStatusCode.OK))
                 {
-                //    result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
-
                     _logger.SuccessAudit("CREATE TOKEN", $"Request Code: {(int)result.Code} - {result.Message} - AccessToken: {_client.Token.AccessToken} - ExpiresIn: {_client.Token.ExpiresIn}", 100);
-
                     retval = true;
                 }
                 else
                 {
-                  //  result.Messages.ToList().ForEach(r => _logger.WriteLog(r.Category, r.Type, $"Request Code: {r.Code} - Message: {r.Reason}", 100));
-                    retval = false;
+                     retval = false;
                   
                 }
 
+               // _logger.SuccessAudit("CREATE TOKEN", $"Request Code: {(int)result.Code} - {result.Message} - AccessToken: {_client.Token.AccessToken} - ExpiresIn: {_client.Token.ExpiresIn}", 100);
+
+
             }
+
+
 
             return retval;
 

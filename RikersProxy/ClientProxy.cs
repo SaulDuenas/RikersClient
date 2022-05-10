@@ -94,6 +94,13 @@ namespace RikersProxy
             client.BaseUrl = this.BaseUrl + endpoint;
             client.Credentials = this.Credentials;
 
+            message.Add(new Message() { Code = null, //Code = HttpStatusCode.UpgradeRequired.ToString(),
+                                        Category = "API CONF",
+                                        Type = "SuccessAudit",
+                                        Reason = $"EndPoint: {client.BaseUrl}"
+                                      }
+                       );
+
             if (this.UseSSL)
             {
                 // validate certificate
@@ -104,7 +111,7 @@ namespace RikersProxy
                 {
                     message.Add(new Message()
                     {
-                        Code = HttpStatusCode.UpgradeRequired.ToString(),
+                        Code=null, //Code = HttpStatusCode.UpgradeRequired.ToString(),
                         Category = "API CONF",
                         Type = "Warning",
                         Reason = $"certificate to authenticate to {this.BaseUrl} not found by certificate"
@@ -114,7 +121,7 @@ namespace RikersProxy
                 {
                     message.Add(new Message()
                     {
-                        Code = HttpStatusCode.Accepted.ToString(),
+                        Code = null, //Code = HttpStatusCode.Accepted.ToString(),
                         Category = "API CONF",
                         Type = "SuccessAudit",
                         Reason = $"certificate to authenticate to {this.BaseUrl} - Subject {certificate.Subject} - Issuer: {certificate.IssuerName} - Serial: {certificate.SerialNumber}"
@@ -126,7 +133,7 @@ namespace RikersProxy
                 {
                     message.Add(new Message()
                     {
-                        Code = HttpStatusCode.UpgradeRequired.ToString(),
+                        Code = null, //Code = HttpStatusCode.UpgradeRequired.ToString(),
                         Category = "API CONF",
                         Type = "Error",
                         Reason = $"certificate to authenticate to {this.BaseUrl} - expire on {certificate.NotAfter.ToString("yyyy-MM-dd")}"
@@ -139,14 +146,14 @@ namespace RikersProxy
             {
                 message.Add(new Message()
                 {
-                    Code = HttpStatusCode.UpgradeRequired.ToString(),
+                    Code = null, //Code = HttpStatusCode.UpgradeRequired.ToString(),
                     Category = "API CONF",
                     Type = "Warning",
                     Reason = $"connection without SSL, it's posibble what the connection for this site is not secure"
                 });
                 message.Add(new Message()
                 {
-                    Code = HttpStatusCode.UpgradeRequired.ToString(),
+                    Code = null, //Code = HttpStatusCode.UpgradeRequired.ToString(),
                     Category = "API CONF",
                     Type = "Warning",
                     Reason = $"certificate to authenticate to {this.BaseUrl} not have been provided"
@@ -179,7 +186,7 @@ namespace RikersProxy
             return null; 
         }
 
-            public ProxyResult GetAccessToken()
+        public ProxyResult GetAccessToken()
         {
             IRestResponse response;
 
@@ -195,7 +202,8 @@ namespace RikersProxy
 
                         response = client.GetAccessToken();
 
-                        if (response.StatusCode == HttpStatusCode.OK)
+                        if ((response != null) && response.StatusCode == HttpStatusCode.OK)
+
                         {
                             this.Token = JsonConvert.DeserializeObject<Token>(response.Content);
                             _token_date_end = DateTime.Now.AddSeconds(this.Token.ExpiresIn);
@@ -207,11 +215,19 @@ namespace RikersProxy
 
                         else
                         {
-                            var result = JsonConvert.DeserializeObject<ResponseMessage>(response.Content);
+                            //  var result = JsonConvert.DeserializeObject<ResponseMessage>(response.Content);
 
-                            var msg = result.Messages.Select(p => new Message() { Category = "API TOKEN", Code = p.Code, Type = p.Type, Reason = p.MessageMessage }).ToList();
+                            // var msg = result.Messages.Select(p => new Message() { Category = "API TOKEN", Code = p.Code, Type = p.Type, Reason = p.MessageMessage }).ToList();
 
-                            MessageLts.AddRange(msg);
+                            MessageLts.Add(new Message()
+                            {
+                                Code = string.IsNullOrEmpty(response.Content) ? null:((int)response.StatusCode).ToString() ,
+                                Category = "API TOKEN",
+                                Type = "Information",
+                                Reason = string.IsNullOrEmpty(response.Content) ? "Respuesta no esperada - Response NULL" : response.Content
+                            }) ;
+
+                            //MessageLts.AddRange(MessageLts);
 
                             return new ProxyResult() { Code = response.StatusCode, Message = $"Unauthorized", Messages = MessageLts };
 
@@ -242,7 +258,7 @@ namespace RikersProxy
 
                         MessageLts.Add(new Message()
                         {
-                            Code = ((int)HttpStatusCode.NotImplemented).ToString(),
+                            Code = ((int)HttpStatusCode.SeeOther).ToString(),
                             Category = "API TOKEN",
                             Type = "Error",
                             Reason = ex.Message
@@ -250,13 +266,13 @@ namespace RikersProxy
 
                         MessageLts.Add(new Message()
                         {
-                            Code = ((int)HttpStatusCode.NotImplemented).ToString(),
+                            Code = ((int)HttpStatusCode.SeeOther).ToString(),
                             Category = "API TOKEN",
                             Type = "FaultAudit",
                             Reason = trace.ToString()
                         });
 
-                        return new ProxyResult { Code = HttpStatusCode.NotImplemented, Message = "Falta Error", Messages = MessageLts };
+                        return new ProxyResult { Code = HttpStatusCode.SeeOther, Message = "Falta Error", Messages = MessageLts };
 
                     }
 
@@ -319,7 +335,7 @@ namespace RikersProxy
                 {
                     try
                     {
-                        prepareClient(client, this.EndPointCreateCase);
+                        MessageLts = prepareClient(client, this.EndPointCreateCase);
 
                         response = client.CreateCase(this.Token.AccessToken, data);
 
@@ -442,7 +458,7 @@ namespace RikersProxy
                     try
                     {
                         var endpoint = this.EndPointFeedBack.Replace("{casenumber}",data.CaseNumber);
-                        prepareClient(client, endpoint);
+                        MessageLts = prepareClient(client, endpoint);
 
                         response = client.SubmitFeedback(this.Token.AccessToken, data);
 

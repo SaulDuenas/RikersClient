@@ -5,11 +5,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BCDD7368-32C3-4F59-9967-54B00B02BFAB}</ProjectGuid>
+    <ProjectGuid>{51F45207-6546-4FA0-AC1B-5609AD6426BC}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Service.Domian</RootNamespace>
-    <AssemblyName>Service.Domian</AssemblyName>
+    <RootNamespace>Service.DataAtm</RootNamespace>
+    <AssemblyName>Service.DataAtm</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -34,24 +34,23 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AutoMapper, Version=7.0.1.0, Culture=neutral, PublicKeyToken=be96cd2c38ef1005, processorArchitecture=MSIL">
-      <HintPath>..\packages\AutoMapper.7.0.1\lib\net45\AutoMapper.dll</HintPath>
-    </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
+    <Reference Include="EntityFramework.SqlServerCompact, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.SqlServerCompact.6.4.4\lib\net45\EntityFramework.SqlServerCompact.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    <Reference Include="System.Data.SqlServerCe, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.SqlServer.Compact.4.0.8876.1\lib\net40\System.Data.SqlServerCe.dll</HintPath>
     </Reference>
-    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -60,57 +59,61 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\Repo\AtmRepositoryCore.cs" />
-    <Compile Include="Core\Repo\AttemptTicketRepositoryCore.cs" />
-    <Compile Include="Core\Repo\FeedBackRepositoryCore.cs" />
-    <Compile Include="Core\CommonCore.cs" />
-    <Compile Include="Core\Proxy\ProxyCore.cs" />
-    <Compile Include="Core\Repo\TicketRepositoryCore.cs" />
-    <Compile Include="Core\TicketServiceCore.cs" />
-    <Compile Include="Core\TicketServiceCoreAsync.cs" />
-    <Compile Include="Dto\AssetDto.cs" />
-    <Compile Include="Dto\CaseContactDto.cs" />
-    <Compile Include="Dto\CustumerDto.cs" />
-    <Compile Include="Dto\CaseDataDto.cs" />
-    <Compile Include="Core\FeedBackServiceCore.cs" />
-    <Compile Include="Implementation\AtmCatRepository.cs" />
-    <Compile Include="Implementation\CommentFileRepository.cs" />
-    <Compile Include="Implementation\StatusFileRepository.cs" />
-    <Compile Include="Implementation\AttemptTicketRepository.cs" />
-    <Compile Include="Implementation\TicketFileRepository.cs" />
-    <Compile Include="Model\AtmCatDomain.cs" />
-    <Compile Include="Model\FeedBackFileDomain.cs" />
-    <Compile Include="Model\StatusFileDomain.cs" />
-    <Compile Include="Model\AttemptTicketDomain.cs" />
+    <Compile Include="Atm.cs">
+      <DependentUpon>AtmDataModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AtmDataModel.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AtmDataModel.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AtmDataModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AtmDataModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AtmDataModel.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AtmDataModel.edmx</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Model\TicketFileDomain.cs" />
-    <Compile Include="Core\Proxy\ProxyCoreAsync.cs" />
-    <Compile Include="Repository\IRepository.cs" />
-    <Compile Include="utils.cs" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="App.config" />
+    <EntityDeploy Include="AtmDataModel.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>AtmDataModel.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <None Include="AtmDataModel.edmx.diagram">
+      <DependentUpon>AtmDataModel.edmx</DependentUpon>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NetLogger\NetLogger.csproj">
-      <Project>{0A5D5108-DFE4-4B7A-BB78-D09F44B52F15}</Project>
-      <Name>NetLogger</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\RikersProxy\RikersProxy.csproj">
-      <Project>{0e5f7b4b-baa4-46b4-b0e2-9e302656be85}</Project>
-      <Name>RikersProxy</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Service.DataAccess\Service.DataAccess.csproj">
-      <Project>{60a65aee-f5a3-40b1-a8f8-c6b21e3716c3}</Project>
-      <Name>Service.DataAccess</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Service.DataAtm\Service.DataAtm.csproj">
-      <Project>{51f45207-6546-4fa0-ac1b-5609ad6426bc}</Project>
-      <Name>Service.DataAtm</Name>
-    </ProjectReference>
+    <Content Include="AtmDataModel.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>AtmDataModel.edmx</DependentUpon>
+      <LastGenOutput>AtmDataModel.Context.cs</LastGenOutput>
+    </Content>
+    <Content Include="AtmDataModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>AtmDataModel.edmx</DependentUpon>
+      <LastGenOutput>AtmDataModel.cs</LastGenOutput>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    if not exist "$(TargetDir)x86" md "$(TargetDir)x86"
+    xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\x86\*.*" "$(TargetDir)x86"
+    if not exist "$(TargetDir)amd64" md "$(TargetDir)amd64"
+    xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\amd64\*.*" "$(TargetDir)amd64"</PostBuildEvent>
+  </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>

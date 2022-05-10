@@ -548,13 +548,20 @@ namespace Service.Domian.Core
                 {
                     // Create Case Data 
                     CaseData casedata = _proxyCore.getCaseData("Subject de creación de Caso", "REPORTING DEVICE", "MX", NTicket);
-                    casedata.Asset = new Asset() { IbmMachineType = atm.IbmMachineType, IbmMachineModel = atm.IbmMachineModel, Serial = atm.SerialNumber }; // get wbservice catalog
+                    casedata.Asset = new Asset() { IbmMachineType = atm.IbmMachineType, IbmMachineModel = atm.IbmMachineModel, Serial = atm.IbmSerial }; // get wbservice catalog
                     return casedata;
                 }
                 else 
                 {
                     return null;
                 }
+
+
+              //  CaseData casedata = _proxyCore.getCaseData("Subject de creación de Caso", "REPORTING DEVICE", "MX", NTicket);
+
+              //  casedata.Asset = new Asset() { IbmMachineType="MF32", IbmMachineModel="000", Serial="MX46709"  };
+
+             //   return casedata;
 
             }
 
